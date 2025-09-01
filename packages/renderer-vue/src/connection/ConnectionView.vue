@@ -1,14 +1,26 @@
 <template>
-    <path class="baklava-connection" :class="classes" :d="d" />
+    <path 
+        class="baklava-connection" 
+        :class="classes" 
+        :d="d" 
+        @mouseenter="onMouseEnter"
+        @mouseleave="onMouseLeave"
+        @click="onClick"
+    />
 </template>
 
 <script lang="ts">
-import { computed, defineComponent } from "vue";
+import { computed, defineComponent, inject, ref } from "vue";
 import { TemporaryConnectionState } from "./connection";
 import { useGraph, useViewModel } from "../utility";
 
 export default defineComponent({
     props: {
+        connectionId: {
+            type: String,
+            required: false,
+            default: null,
+        },
         x1: {
             type: Number,
             required: true,
@@ -37,6 +49,25 @@ export default defineComponent({
     setup(props) {
         const { viewModel } = useViewModel();
         const { graph } = useGraph();
+        
+        const isHovered = ref(false);
+        const isClicked = ref(false);
+        
+        // 使用全局连接线选中状态管理
+        const connectionSelection = inject<{
+            selectedConnectionId: any;
+            selectConnection: (id: string) => void;
+            unselectConnection: () => void;
+        }>("connectionSelection");
+        
+        if (!connectionSelection) {
+            throw new Error("connectionSelection not provided");
+        }
+        
+        // 计算当前连接线是否被选中
+        const isSelected = computed(() => 
+            props.connectionId && connectionSelection.selectedConnectionId.value === props.connectionId
+        );
 
         const transform = (x: number, y: number) => {
             const tx = (x + graph.value.panning.x) * graph.value.scaling;
@@ -59,9 +90,41 @@ export default defineComponent({
             "--temporary": props.isTemporary,
             "--allowed": props.state === TemporaryConnectionState.ALLOWED,
             "--forbidden": props.state === TemporaryConnectionState.FORBIDDEN,
+            "--hovered": isHovered.value && !isSelected.value,
+            "--clicked": isClicked.value,
+            "--selected": isSelected.value,
         }));
+        
+        const onMouseEnter = () => {
+            isHovered.value = true;
+        };
+        
+        const onMouseLeave = () => {
+            isHovered.value = false;
+        };
+        
+        const onClick = () => {
+            // 触发点击动画（在选中逻辑之前，确保动画只在当前连接线上生效）
+            isClicked.value = true;
+            setTimeout(() => {
+                isClicked.value = false;
+            }, 600); // Match animation duration
+            
+            // 实现互斥选中逻辑 (仅对非临时连接有效)
+            if (props.connectionId) {
+                if (isSelected.value) {
+                    // 如果当前已选中，则取消选中
+                    connectionSelection.unselectConnection();
+                } else {
+                    // 如果当前未选中，则选中当前连接线（自动取消其他连接线的选中状态）
+                    connectionSelection.selectConnection(props.connectionId);
+                }
+            }
+        };
 
-        return { d, classes };
+
+
+        return { d, classes, onMouseEnter, onMouseLeave, onClick };
     },
 });
 </script>

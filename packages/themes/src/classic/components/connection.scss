@@ -1,7 +1,11 @@
 .baklava-connection {
     stroke: var(--baklava-color-connection-default);
-    stroke-width: 2px;
+    stroke-width: 3px; /* 更细的连接线 */
     fill: none;
+    cursor: pointer;
+    pointer-events: stroke; /* 确保SVG路径可以接收鼠标事件 */
+    transition: stroke 0.2s ease-out, stroke-width 0.15s ease-out, stroke-opacity 0.15s ease-out, filter 0.2s ease-out;
+    will-change: stroke, stroke-width, stroke-opacity, filter; /* 性能优化 */
 
     &.--temporary {
         stroke-width: 4px;
@@ -11,9 +15,83 @@
         transform: translateY(-1px);
     }
 
+    &.--hovered {
+        stroke: var(--baklava-color-connection-hovered) !important;
+        stroke-width: 5px !important;
+        filter: drop-shadow(0 0 8px rgba(76, 175, 80, 0.6)) !important;
+        -webkit-animation: pulse-hover 800ms ease-in-out infinite alternate !important;
+        animation: pulse-hover 800ms ease-in-out infinite alternate !important;
+    }
+
+    &.--clicked {
+        stroke: var(--baklava-color-connection-clicked) !important;
+        stroke-width: 5px !important;
+        filter: drop-shadow(0 0 12px rgba(33, 150, 243, 0.8)) !important;
+        -webkit-animation: pulse-click 600ms ease-in-out !important;
+        animation: pulse-click 600ms ease-in-out !important;
+    }
+
+    &.--selected {
+        stroke: var(--baklava-color-connection-selected) !important;
+        stroke-width: 5px !important;
+        filter: drop-shadow(0 0 10px rgba(255, 152, 0, 0.7)) !important;
+    }
+
     @keyframes dash {
         to {
             stroke-dashoffset: 20;
+        }
+    }
+
+    @-webkit-keyframes pulse-hover {
+        0% {
+            stroke-opacity: 0.8;
+            filter: drop-shadow(0 0 8px rgba(76, 175, 80, 0.6));
+        }
+        100% {
+            stroke-opacity: 1;
+            filter: drop-shadow(0 0 12px rgba(76, 175, 80, 0.9));
+        }
+    }
+
+    @keyframes pulse-hover {
+        0% {
+            stroke-opacity: 0.8;
+            filter: drop-shadow(0 0 8px rgba(76, 175, 80, 0.6));
+        }
+        100% {
+            stroke-opacity: 1;
+            filter: drop-shadow(0 0 12px rgba(76, 175, 80, 0.9));
+        }
+    }
+
+    @-webkit-keyframes pulse-click {
+        0% {
+            stroke-opacity: 1;
+            filter: drop-shadow(0 0 12px rgba(33, 150, 243, 0.8));
+        }
+        50% {
+            stroke-opacity: 0.6;
+            filter: drop-shadow(0 0 20px rgba(33, 150, 243, 1));
+        }
+        100% {
+            stroke-opacity: 1;
+            filter: drop-shadow(0 0 12px rgba(33, 150, 243, 0.8));
+        }
+    }
+
+    @keyframes pulse-click {
+        0% {
+            stroke-opacity: 1;
+            filter: drop-shadow(0 0 12px rgba(33, 150, 243, 0.8));
+        }
+        50% {
+            stroke-opacity: 0.6;
+            filter: drop-shadow(0 0 20px rgba(33, 150, 243, 1));
+        }
+        100% {
+            stroke-opacity: 1;
+            filter: drop-shadow(0 0 12px rgba(33, 150, 243, 0.8));
         }
     }
 

@@ -119,6 +119,19 @@ providePlugin(viewModelRef);
 const el = ref<HTMLElement | null>(null);
 provide("editorEl", el);
 
+const selectedConnectionId = ref<string | null>(null);
+const selectConnection = (connectionId: string) => {
+    selectedConnectionId.value = connectionId;
+};
+const unselectConnection = () => {
+    selectedConnectionId.value = null;
+};
+provide("connectionSelection", {
+    selectedConnectionId,
+    selectConnection,
+    unselectConnection,
+});
+
 const nodes = computed(() => props.viewModel.displayedGraph.nodes);
 const dragMoves = computed(() => props.viewModel.displayedGraph.nodes.map((n) => useDragMove(toRef(n, "position"))));
 const connections = computed(() => props.viewModel.displayedGraph.connections);
