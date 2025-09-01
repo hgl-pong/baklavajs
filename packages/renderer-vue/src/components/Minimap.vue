@@ -125,16 +125,34 @@ const updateCanvas = () => {
         ctx.stroke();
     }
 
-    // draw nodes
+    // draw comment nodes first (behind other nodes)
     ctx.strokeStyle = "lightgray";
     for (const [n, nc] of nodeCoords.entries()) {
-        const [x1, y1] = transformCoordinates(nc.x1, nc.y1);
-        const [x2, y2] = transformCoordinates(nc.x2, nc.y2);
-        ctx.fillStyle = getNodeColor(nodeDomElements.get(n));
-        ctx.beginPath();
-        ctx.rect(x1, y1, x2 - x1, y2 - y1);
-        ctx.fill();
-        ctx.stroke();
+        if (n.type === "CommentNode") {
+            const [x1, y1] = transformCoordinates(nc.x1, nc.y1);
+            const [x2, y2] = transformCoordinates(nc.x2, nc.y2);
+            // Make comment nodes lighter and outlined
+            ctx.fillStyle = "rgba(200, 200, 200, 0.3)"; // Light gray with transparency
+            ctx.strokeStyle = "rgba(150, 150, 150, 0.5)"; // Lighter stroke
+            ctx.beginPath();
+            ctx.rect(x1, y1, x2 - x1, y2 - y1);
+            ctx.fill();
+            ctx.stroke();
+        }
+    }
+
+    // draw regular nodes (on top of comment nodes)
+    ctx.strokeStyle = "lightgray";
+    for (const [n, nc] of nodeCoords.entries()) {
+        if (n.type !== "CommentNode") {
+            const [x1, y1] = transformCoordinates(nc.x1, nc.y1);
+            const [x2, y2] = transformCoordinates(nc.x2, nc.y2);
+            ctx.fillStyle = getNodeColor(nodeDomElements.get(n));
+            ctx.beginPath();
+            ctx.rect(x1, y1, x2 - x1, y2 - y1);
+            ctx.fill();
+            ctx.stroke();
+        }
     }
 
     if (showViewBounds.value) {

@@ -11,6 +11,11 @@
 
     width: var(--width);
 
+    // Comment nodes should stay behind all other nodes and connections
+    &[data-node-type="CommentNode"] {
+        z-index: 0;
+    }
+
     &:hover {
         border-color: var(--baklava-node-color-hover);
 
@@ -125,4 +130,11 @@
             );
         }
     }
+}
+
+// Keep Comment nodes interactive while having visual "behind" behavior
+.baklava-node[data-node-type="CommentNode"].--selected,
+.baklava-node[data-node-type="CommentNode"].--dragging {
+    z-index: 0.2;
+    background: rgba(255, 255, 255, 0.7);
 }

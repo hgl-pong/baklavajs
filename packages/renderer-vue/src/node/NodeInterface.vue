@@ -32,7 +32,6 @@ import { computed, onMounted, onUpdated, Ref, ref, inject } from "vue";
 import { AbstractNode, NodeInterface } from "@baklavajs/core";
 import { useViewModel } from "../utility";
 import { useTemporaryConnection } from "../editor/temporaryConnection";
-import { getDomElements } from "../connection/domResolver";
 
 const ellipsis = (value: any, characters = 100) => {
     const stringValue: string = typeof value?.toString === "function" ? String(value) : "";
