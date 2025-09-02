@@ -22,6 +22,7 @@
     "scripts": {
         "dev": "vite",
         "build": "rimraf dist && vue-tsc --noEmit && vite build",
+        "build:electron": "rimraf dist && vue-tsc --noEmit && vite build --config vite.electron.config.ts",
         "lint": "eslint --ext .ts,.vue src"
     },
     "repository": {
