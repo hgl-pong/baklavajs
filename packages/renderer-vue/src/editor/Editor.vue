@@ -28,6 +28,31 @@
             <NodePalette v-if="viewModel.settings.palette.enabled" />
         </slot>
 
+        <!-- Render comment nodes behind connections -->
+        <div class="node-container" :style="nodeContainerStyle">
+            <transition-group name="fade">
+                <!-- Comment nodes only -->
+                <template v-for="node in commentNodes" :key="node.id + counter.toString()">
+                    <slot
+                        name="node"
+                        :node="node"
+                        :selected="selectedNodes.includes(node)"
+                        :dragging="isDraggingNode(node)"
+                        @select="selectNode(node)"
+                        @start-drag="startDrag"
+                    >
+                        <Node
+                            :node="node"
+                            :selected="selectedNodes.includes(node)"
+                            :dragging="isDraggingNode(node)"
+                            @select="selectNode(node)"
+                            @start-drag="startDrag"
+                        />
+                    </slot>
+                </template>
+            </transition-group>
+        </div>
+
         <svg class="connections-container">
             <g v-for="connection in connections" :key="connection.id + counter.toString()">
                 <slot name="connection" :connection="connection">
@@ -42,21 +67,22 @@
             </slot>
         </svg>
 
+        <!-- Render normal nodes above connections -->
         <div class="node-container" :style="nodeContainerStyle">
             <transition-group name="fade">
-                <template v-for="(node, idx) in nodes" :key="node.id + counter.toString()">
+                <template v-for="node in normalNodes" :key="node.id + counter.toString()">
                     <slot
                         name="node"
                         :node="node"
                         :selected="selectedNodes.includes(node)"
-                        :dragging="dragMoves[idx].dragging.value"
+                        :dragging="isDraggingNode(node)"
                         @select="selectNode(node)"
                         @start-drag="startDrag"
                     >
                         <Node
                             :node="node"
                             :selected="selectedNodes.includes(node)"
-                            :dragging="dragMoves[idx].dragging.value"
+                            :dragging="isDraggingNode(node)"
                             @select="selectNode(node)"
                             @start-drag="startDrag"
                         />
@@ -136,6 +162,16 @@ const nodes = computed(() => props.viewModel.displayedGraph.nodes);
 const dragMoves = computed(() => props.viewModel.displayedGraph.nodes.map((n) => useDragMove(toRef(n, "position"))));
 const connections = computed(() => props.viewModel.displayedGraph.connections);
 const selectedNodes = computed(() => props.viewModel.displayedGraph.selectedNodes);
+
+// Split nodes into comment and normal nodes for correct layering
+const commentNodes = computed(() => nodes.value.filter((n) => n.type === "CommentNode"));
+const normalNodes = computed(() => nodes.value.filter((n) => n.type !== "CommentNode"));
+
+// Helper to get dragging state by node
+const isDraggingNode = (node: AbstractNode) => {
+    const idx = nodes.value.indexOf(node);
+    return dragMoves.value[idx]?.dragging.value;
+};
 
 const panZoom = usePanZoom();
 const temporaryConnection = provideTemporaryConnection();
