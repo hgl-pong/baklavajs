@@ -1,8 +1,7 @@
 <template>
     <div class="baklava-node --palette" :data-node-type="type">
         <div class="__title">
-            <div class="__title-label">
-                {{ title }}
+            <div class="__title-label" v-html="highlightedTitle">
             </div>
             <div v-if="hasContextMenu" class="__menu">
                 <vertical-dots class="--clickable" @pointerdown.stop.prevent @click.stop.prevent="openContextMenu" />
@@ -38,6 +37,10 @@ export default defineComponent({
             type: String,
             required: true,
         },
+        searchQuery: {
+            type: String,
+            default: "",
+        },
     },
     setup(props) {
         const { viewModel } = useViewModel();
@@ -45,6 +48,27 @@ export default defineComponent({
 
         const showContextMenu = ref(false);
         const hasContextMenu = computed(() => props.type.startsWith(GRAPH_NODE_TYPE_PREFIX));
+
+        const highlightedTitle = computed(() => {
+            if (!props.searchQuery || !props.searchQuery.trim()) {
+                return props.title;
+            }
+
+            const query = props.searchQuery.toLowerCase().trim();
+            const title = props.title;
+            const lowerTitle = title.toLowerCase();
+            
+            const index = lowerTitle.indexOf(query);
+            if (index === -1) {
+                return title;
+            }
+
+            const before = title.substring(0, index);
+            const match = title.substring(index, index + query.length);
+            const after = title.substring(index + query.length);
+            
+            return `${before}<span class="baklava-node-palette__highlight">${match}</span>${after}`;
+        });
 
         const contextMenuItems: IMenuItem[] = [
             { label: "Edit Subgraph", value: "editSubgraph" },
@@ -72,7 +96,7 @@ export default defineComponent({
             }
         };
 
-        return { showContextMenu, hasContextMenu, contextMenuItems, openContextMenu, onContextMenuClick };
+        return { showContextMenu, hasContextMenu, contextMenuItems, openContextMenu, onContextMenuClick, highlightedTitle };
     },
 });
 </script>
