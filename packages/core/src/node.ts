@@ -28,12 +28,14 @@ export interface INodeState<I, O> {
     type: string;
     title: string;
     id: string;
+    comment?: string;
     inputs: NodeInterfaceDefinitionStates<I> & NodeInterfaceDefinitionStates<Record<string, NodeInterface<any>>>;
     outputs: NodeInterfaceDefinitionStates<O> & NodeInterfaceDefinitionStates<Record<string, NodeInterface<any>>>;
 }
 
 export abstract class AbstractNode implements IBaklavaEventEmitter, IBaklavaTapable {
     protected _title = "";
+    protected _comment = "";
 
     /** Type of the node */
     public abstract readonly type: string;
@@ -86,6 +88,14 @@ export abstract class AbstractNode implements IBaklavaEventEmitter, IBaklavaTapa
         }
     }
 
+    /** Comment/description for the node. */
+    public get comment() {
+        return this._comment;
+    }
+    public set comment(v: string) {
+        this._comment = v;
+    }
+
     /**
      * Add an input interface to the node
      * @param key Key of the input
@@ -134,6 +144,7 @@ export abstract class AbstractNode implements IBaklavaEventEmitter, IBaklavaTapa
         this.hooks.beforeLoad.execute(state);
         this.id = state.id;
         this._title = state.title;
+        this._comment = state.comment || "";
         Object.entries(state.inputs).forEach(([k, v]) => {
             if (this.inputs[k]) {
                 this.inputs[k].load(v);
@@ -157,6 +168,7 @@ export abstract class AbstractNode implements IBaklavaEventEmitter, IBaklavaTapa
             type: this.type,
             id: this.id,
             title: this.title,
+            comment: this.comment,
             inputs: inputStates,
             outputs: outputStates,
         };

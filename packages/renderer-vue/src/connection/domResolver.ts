@@ -15,7 +15,8 @@ export function getDomElements(ni: NodeInterface): IResolvedDomElements {
     const portDOM = interfaceDOM?.getElementsByClassName("__port");
 
     return {
-        node: interfaceDOM?.closest(".baklava-node") ?? null,
+        // Use the outer wrapper that carries absolute top/left for correct editor-space coordinates
+        node: interfaceDOM?.closest(".baklava-node-wrapper") ?? null,
         interface: interfaceDOM,
         port: portDOM && portDOM.length > 0 ? (portDOM[0] as HTMLElement) : null,
     };
