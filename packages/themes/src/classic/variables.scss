@@ -28,11 +28,18 @@
     --baklava-node-interface-port-tooltip-color-background: var(--baklava-editor-background-pattern-black);
     --baklava-node-border-radius: 4px;
 
+    // Comment Nodes
+    --baklava-comment-color-background: #fff3b833; // soft yellow with transparency
+    --baklava-comment-color-border: #e0c36c; // golden border
+    --baklava-comment-color-border-selected: #ffd36c; // brighter when selected
+    --baklava-comment-title-color-background: #e0c36c66; // semi-transparent golden title bar
+    --baklava-comment-title-color-foreground: #2c2c2c; // dark text on light title bar
+
     // Connections
     --baklava-color-connection-default: white;
     --baklava-color-connection-allowed: green;
     --baklava-color-connection-forbidden: red;
-    --baklava-color-connection-hovered: #4CAF50;
+
     --baklava-color-connection-clicked: #2196F3;
     --baklava-color-connection-selected: #FF9800;
 

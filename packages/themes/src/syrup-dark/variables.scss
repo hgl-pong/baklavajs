@@ -28,6 +28,13 @@
     --baklava-node-interface-port-tooltip-color-background: var(--baklava-editor-background-pattern-black);
     --baklava-node-border-radius: 6px;
 
+    // Comment Nodes
+    --baklava-comment-color-background: #f5d87a22; // subtle warm glow on dark
+    --baklava-comment-color-border: #f0c060; // warm amber border
+    --baklava-comment-color-border-selected: #ffc766; // brighter when selected
+    --baklava-comment-title-color-background: #eb901a44; // semi-transparent title bar
+    --baklava-comment-title-color-foreground: #10151e; // dark navy text for contrast
+
     // Connections
     --baklava-color-connection-default: #737f96;
     --baklava-color-connection-allowed: #48bc79;
