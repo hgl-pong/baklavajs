@@ -1,4 +1,4 @@
-export type { CreateSubgraphCommand, DeleteNodesCommand, SaveSubgraphCommand, SwitchToMainGraphCommand } from "./graph";
+export type { CreateSubgraphCommand, DeleteNodesCommand, SaveSubgraphCommand, SelectAllNodesCommand, SwitchToMainGraphCommand } from "./graph";
 export type { ClearHistoryCommand, CommitTransactionCommand, StartTransactionCommand, UndoCommand, RedoCommand } from "./history";
 export type { ClearClipboardCommand, CopyCommand, PasteCommand } from "./clipboard";
 export type { OpenSidebarCommand } from "./sidebar";
@@ -9,6 +9,7 @@ export {
     CREATE_SUBGRAPH_COMMAND,
     DELETE_NODES_COMMAND,
     SAVE_SUBGRAPH_COMMAND,
+    SELECT_ALL_NODES_COMMAND,
     SWITCH_TO_MAIN_GRAPH_COMMAND,
 } from "./graph";
 export { CLEAR_HISTORY_COMMAND, COMMIT_TRANSACTION_COMMAND, START_TRANSACTION_COMMAND, UNDO_COMMAND, REDO_COMMAND } from "./history";
