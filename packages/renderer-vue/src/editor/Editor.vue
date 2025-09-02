@@ -99,6 +99,27 @@
             <Minimap v-if="viewModel.settings.enableMinimap" />
         </slot>
 
+        <!-- Canvas Search Bar -->
+        <div
+            v-if="viewModel.search.visible"
+            class="baklava-canvas-search"
+            @keydown.escape.stop.prevent="viewModel.commandHandler.executeCommand('CLOSE_CANVAS_SEARCH', true)"
+        >
+            <input
+                ref="searchInputEl"
+                v-model="viewModel.search.query"
+                type="text"
+                placeholder="在画布中搜索...（标题/类型/接口名）"
+                class="baklava-input baklava-canvas-search__input"
+                @keydown.shift.enter.prevent="viewModel.search.prev()"
+                @keydown.enter.prevent="viewModel.search.next()"
+            />
+            <span class="baklava-canvas-search__count">{{ viewModel.search.total ? viewModel.search.index + 1 : 0 }}/{{ viewModel.search.total }}</span>
+            <button class="baklava-canvas-search__btn" title="上一个 (Shift+Enter)" @click="viewModel.search.prev()">↑</button>
+            <button class="baklava-canvas-search__btn" title="下一个 (Enter)" @click="viewModel.search.next()">↓</button>
+            <button class="baklava-canvas-search__btn --close" title="关闭 (Esc)" @click="viewModel.commandHandler.executeCommand('CLOSE_CANVAS_SEARCH', true)">×</button>
+        </div>
+
         <slot name="contextMenu" :context-menu="contextMenu">
             <ContextMenu
                 v-if="viewModel.settings.contextMenu.enabled"
@@ -115,7 +136,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, provide, Ref, ref, toRef } from "vue";
+import { computed, provide, Ref, ref, toRef, onMounted, watch } from "vue";
 
 import { AbstractNode } from "@baklavajs/core";
 import { IBaklavaViewModel } from "../viewModel";
@@ -258,4 +279,55 @@ const stopDrag = () => {
 
     document.removeEventListener("pointerup", stopDrag);
 };
+
+const searchInputEl = ref<HTMLInputElement | null>(null);
+
+onMounted(() => {
+    // autofocus when opening search
+    watch(
+        () => viewModelRef.value.search.visible,
+        (v) => {
+            if (v) {
+                // next tick like
+                setTimeout(() => searchInputEl.value?.focus(), 0);
+            }
+        },
+        { immediate: false },
+    );
+});
 </script>
+
+<style scoped>
+.baklava-canvas-search {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    background: rgba(30, 30, 30, 0.9);
+    color: #fff;
+    border-radius: 6px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+    z-index: 1000;
+}
+.baklava-canvas-search__input {
+    width: 220px;
+}
+.baklava-canvas-search__btn {
+    border: none;
+    background: #444;
+    color: #fff;
+    padding: 4px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.baklava-canvas-search__btn:hover { background: #555; }
+.baklava-canvas-search__btn.--close { background: #663333; }
+.baklava-canvas-search__count { font-size: 12px; opacity: 0.9; }
+
+/* Node highlight */
+:global(.baklava-node.--search-match) { outline: 2px dashed #3fa7ff; outline-offset: 2px; }
+:global(.baklava-node.--search-active-match) { outline: 2px solid #3fa7ff; box-shadow: 0 0 0 3px rgba(63,167,255,0.35); }
+</style>

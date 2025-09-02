@@ -106,6 +106,10 @@ const focusFirstResult = () => {
 };
 
 const handleGlobalKeydown = (event: KeyboardEvent) => {
+    // If canvas search is open, do not hijack shortcuts here
+    if (viewModel.value.search?.visible) {
+        return;
+    }
     // Ctrl+F 或 Cmd+F 聚焦搜索框
     if ((event.ctrlKey || event.metaKey) && event.key === 'f') {
         event.preventDefault();

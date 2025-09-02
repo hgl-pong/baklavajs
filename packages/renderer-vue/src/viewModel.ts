@@ -12,6 +12,7 @@ import { SubgraphInputNode, SubgraphOutputNode } from "./graph/subgraphInterface
 import { registerSidebarCommands } from "./sidebar";
 import { DEFAULT_SETTINGS, IViewSettings } from "./settings";
 import { registerZoomToFitCommands } from "./zoomToFit";
+import { registerCanvasSearch } from "./search";
 export interface IBaklavaViewModel extends IBaklavaTapable {
     editor: Editor;
     /** Currently displayed graph */
@@ -29,6 +30,8 @@ export interface IBaklavaViewModel extends IBaklavaTapable {
         renderInterface: SequentialHook<{ intf: NodeInterface<any>; el: HTMLElement }, null>;
     };
     switchGraph: (newGraph: Graph | GraphTemplate) => void;
+    // Add search state to view model
+    search: ReturnType<typeof registerCanvasSearch>;
 }
 
 export function useBaklava(existingEditor?: Editor): IBaklavaViewModel {
@@ -57,6 +60,8 @@ export function useBaklava(existingEditor?: Editor): IBaklavaViewModel {
     registerGraphCommands(displayedGraph, commandHandler, switchGraph);
     registerSidebarCommands(displayedGraph, commandHandler);
     registerZoomToFitCommands(displayedGraph, commandHandler, settings);
+
+    const search = registerCanvasSearch(displayedGraph, commandHandler, hooks);
 
     watch(
         editor,
@@ -128,5 +133,6 @@ export function useBaklava(existingEditor?: Editor): IBaklavaViewModel {
         clipboard,
         hooks,
         switchGraph,
+        search,
     }) as IBaklavaViewModel;
 }
