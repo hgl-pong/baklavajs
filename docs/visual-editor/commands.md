@@ -38,3 +38,35 @@ viewModel.commandHandler.registerCommand<MyCommand>("MyCommand", {
 // for invoking this command:
 viewModel.commandHandler.executeCommand<MyCommand>("MyCommand", true, "myNodeId");
 ```
+
+## Built-in Commands
+
+Baklava provides several built-in commands for common operations:
+
+### Selection Commands
+
+- **SELECT_ALL_NODES_COMMAND**: Selects all nodes in the current graph
+  - Hotkey: `Ctrl + A`
+  - Can execute: Only when there are nodes in the graph
+
+### Search Commands
+
+- **OPEN_CANVAS_SEARCH_COMMAND**: Opens the canvas search interface
+- **CLOSE_CANVAS_SEARCH_COMMAND**: Closes the canvas search interface  
+- **FIND_NEXT_MATCH_COMMAND**: Navigates to the next search result
+- **FIND_PREV_MATCH_COMMAND**: Navigates to the previous search result
+
+### Usage Example
+
+```ts
+import { Commands } from "@baklavajs/renderer-vue";
+
+// Select all nodes
+viewModel.commandHandler.executeCommand(Commands.SELECT_ALL_NODES_COMMAND);
+
+// Open search
+viewModel.commandHandler.executeCommand(Commands.OPEN_CANVAS_SEARCH_COMMAND);
+```
+
+For more details about search and selection features, see the [Search and Selection](./search-and-selection.md) documentation.
+```
