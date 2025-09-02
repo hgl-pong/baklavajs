@@ -306,25 +306,36 @@ onMounted(() => {
     align-items: center;
     gap: 6px;
     padding: 6px 8px;
-    background: rgba(30, 30, 30, 0.9);
-    color: #fff;
-    border-radius: 6px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+    background: var(--baklava-toolbar-background, rgba(27,32,44,0.85));
+    color: var(--baklava-toolbar-foreground, #fff);
+    border-radius: var(--baklava-control-border-radius, 6px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+    border: 1px solid color-mix(in srgb, var(--baklava-toolbar-foreground, #fff) 10%, transparent);
     z-index: 1000;
 }
 .baklava-canvas-search__input {
     width: 220px;
+    padding: 6px 8px;
+    background: var(--baklava-control-color-background, #2c2c2c);
+    color: var(--baklava-control-color-foreground, #fff);
+    border: 1px solid color-mix(in srgb, var(--baklava-control-color-foreground, #fff) 12%, transparent);
+    border-radius: var(--baklava-control-border-radius, 4px);
+    outline: none;
+}
+.baklava-canvas-search__input:focus {
+    border-color: var(--baklava-control-color-primary, #5379b5);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--baklava-control-color-primary, #5379b5) 25%, transparent);
 }
 .baklava-canvas-search__btn {
-    border: none;
-    background: #444;
-    color: #fff;
+    border: 1px solid color-mix(in srgb, var(--baklava-control-color-foreground, #fff) 12%, transparent);
+    background: var(--baklava-control-color-background, #2c2c2c);
+    color: var(--baklava-control-color-foreground, #fff);
     padding: 4px 6px;
-    border-radius: 4px;
+    border-radius: var(--baklava-control-border-radius, 4px);
     cursor: pointer;
 }
-.baklava-canvas-search__btn:hover { background: #555; }
-.baklava-canvas-search__btn.--close { background: #663333; }
+.baklava-canvas-search__btn:hover { background: var(--baklava-control-color-hover, #4c4c4c); }
+.baklava-canvas-search__btn.--close { background: color-mix(in srgb, var(--baklava-control-color-error, #d00000) 25%, transparent); border-color: transparent; }
 .baklava-canvas-search__count { font-size: 12px; opacity: 0.9; }
 
 /* Node highlight */
