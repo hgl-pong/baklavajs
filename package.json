@@ -3,7 +3,7 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "playground": "cd packages/renderer-vue && yarn run dev",
+        "playground": "cd packages/renderer-vue && yarn run dev --host",
         "lint": "eslint \"packages/*/src/**/*.{ts,vue}\"",
         "build": "lerna run build",
         "test": "lerna run test",

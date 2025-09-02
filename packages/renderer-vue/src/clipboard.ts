@@ -1,4 +1,4 @@
-import { computed, reactive, Ref, ref } from "vue";
+import { computed, reactive, Ref, ref, onUnmounted } from "vue";
 import { v4 as uuidv4 } from "uuid";
 import { AbstractNode, INodeState, IConnectionState, Connection, NodeInterface, Editor, Graph } from "@baklavajs/core";
 import {
@@ -8,6 +8,7 @@ import {
     START_TRANSACTION_COMMAND,
 } from "./history";
 import { ICommand, ICommandHandler } from "./commands";
+import { globalClipboard, IGlobalClipboardData } from "./globalClipboard";
 
 export const COPY_COMMAND = "COPY";
 export const PASTE_COMMAND = "PASTE";
@@ -28,14 +29,22 @@ export function useClipboard(
 ): IClipboard {
     const token = Symbol("ClipboardToken");
 
-    const nodeBuffer = ref("");
-    const connectionBuffer = ref("");
-
-    const isEmpty = computed(() => !nodeBuffer.value);
+    // 使用全局剪贴板管理器
+    const isEmpty = computed(() => globalClipboard.isEmpty);
+    
+    // 订阅全局剪贴板变化
+    const unsubscribe = globalClipboard.subscribe(() => {
+        // 当全局剪贴板数据变化时，触发响应式更新
+        // isEmpty 会自动重新计算
+    });
+    
+    // 在组件卸载时取消订阅
+    onUnmounted(() => {
+        unsubscribe();
+    });
 
     const clear = () => {
-        nodeBuffer.value = "";
-        connectionBuffer.value = "";
+        globalClipboard.clear();
     };
 
     const copy = () => {
@@ -51,8 +60,11 @@ export function useClipboard(
             )
             .map((conn) => ({ from: conn.from.id, to: conn.to.id }) as IConnectionState);
 
-        connectionBuffer.value = JSON.stringify(connections);
-        nodeBuffer.value = JSON.stringify(displayedGraph.value.selectedNodes.map((n) => n.save()));
+        const connectionBuffer = JSON.stringify(connections);
+        const nodeBuffer = JSON.stringify(displayedGraph.value.selectedNodes.map((n) => n.save()));
+        
+        // 使用全局剪贴板管理器保存数据
+        globalClipboard.setData(nodeBuffer, connectionBuffer);
     };
 
     const findInterface = (
@@ -80,11 +92,17 @@ export function useClipboard(
             return;
         }
 
+        // 从全局剪贴板获取数据
+        const clipboardData = globalClipboard.getData();
+        if (!clipboardData) {
+            return;
+        }
+
         // Map old IDs to new IDs
         const idmap = new Map<string, string>();
 
-        const parsedNodeBuffer = JSON.parse(nodeBuffer.value) as INodeState<any, any>[];
-        const parsedConnectionBuffer = JSON.parse(connectionBuffer.value) as IConnectionState[];
+        const parsedNodeBuffer = JSON.parse(clipboardData.nodeBuffer) as INodeState<any, any>[];
+        const parsedConnectionBuffer = JSON.parse(clipboardData.connectionBuffer) as IConnectionState[];
 
         const newNodes: AbstractNode[] = [];
         const newConnections: Connection[] = [];

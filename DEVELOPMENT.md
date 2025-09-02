@@ -490,6 +490,60 @@ type(scope): description
 - 更新相关文档
 - 通过所有 CI 检查
 
+## 跨标签页拷贝粘贴功能
+
+### 功能概述
+
+BaklavaJS 支持在多个浏览器标签页之间进行节点的拷贝粘贴操作。该功能通过全局剪贴板管理器实现，使用 `localStorage` 在不同标签页间共享剪贴板数据。
+
+### 实现原理
+
+- **全局剪贴板管理器**: `globalClipboard.ts` 提供跨标签页的数据共享
+- **localStorage 同步**: 使用浏览器的 `localStorage` API 存储剪贴板数据
+- **事件监听**: 监听 `storage` 事件实现标签页间的实时同步
+- **数据序列化**: 节点和连接数据通过 JSON 序列化存储
+
+### 使用方法
+
+1. **复制节点**: 选中节点后按 `Ctrl+C` 或使用右键菜单
+2. **粘贴节点**: 在任意标签页中按 `Ctrl+V` 粘贴已复制的节点
+3. **跨标签页操作**: 在标签页 A 复制的节点可以在标签页 B 中粘贴
+
+### 技术实现
+
+#### 全局剪贴板管理器
+
+```typescript
+// 使用全局剪贴板
+import { globalClipboard } from '@baklavajs/renderer-vue';
+
+// 设置剪贴板数据
+globalClipboard.setData(nodeBuffer, connectionBuffer);
+
+// 获取剪贴板数据
+const data = globalClipboard.getData();
+
+// 清空剪贴板
+globalClipboard.clear();
+```
+
+#### 数据结构
+
+```typescript
+interface IGlobalClipboardData {
+  nodeBuffer: string;      // 序列化的节点数据
+  connectionBuffer: string; // 序列化的连接数据
+  timestamp: number;       // 时间戳
+  instanceId: string;      // 实例ID
+}
+```
+
+### 注意事项
+
+- 剪贴板数据存储在 `localStorage` 中，受浏览器存储限制
+- 跨域标签页无法共享剪贴板数据
+- 数据包含时间戳，可用于实现过期清理机制
+
 ## 常见问题
 
 ### Q: 如何添加新的节点类型？
