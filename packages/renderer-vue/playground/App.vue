@@ -3,6 +3,7 @@
         <BaklavaEditor :view-model="baklavaView">
             <template #node="nodeProps">
                 <CommentNodeRenderer v-if="nodeProps.node.type === 'CommentNode'" v-bind="nodeProps" />
+
                 <NodeComponent v-else v-bind="nodeProps" />
             </template>
         </BaklavaEditor>
@@ -20,10 +21,12 @@
 </template>
 
 <script setup lang="ts">
+import { reactive } from "vue";
 import { NodeInstanceOf } from "@baklavajs/core";
 import { BaklavaEditor, Components, SelectInterface, useBaklava, Commands, DEFAULT_TOOLBAR_COMMANDS } from "../src";
 import { DependencyEngine, applyResult } from "@baklavajs/engine";
 import { BaklavaInterfaceTypes } from "@baklavajs/interface-types";
+import type { ICommand } from "../src/commands";
 
 import TestNode from "./TestNode";
 import OutputNode from "./OutputNode";
@@ -44,6 +47,7 @@ import ReactiveOutputTestNode from "./ReactiveOutputTestNode";
 import { stringType, numberType, booleanType } from "./interfaceTypes";
 
 import CommentNodeRenderer from "./CommentNodeRenderer.vue";
+
 import { defineComponent, h } from "vue";
 
 const NodeComponent = Components.Node;
@@ -62,6 +66,8 @@ baklavaView.settings.contextMenu.additionalItems = [
     { isDivider: true },
     { label: "Copy", command: Commands.COPY_COMMAND },
     { label: "Paste", command: Commands.PASTE_COMMAND },
+    { isDivider: true },
+    { label: "Add Reroute Point", command: "ADD_REROUTE_POINT_COMMAND" },
 ];
 
 const CLEAR_ALL_COMMAND = "CLEAR_ALL";
@@ -72,6 +78,16 @@ baklavaView.commandHandler.registerCommand(CLEAR_ALL_COMMAND, {
         });
     },
     canExecute: () => baklavaView.displayedGraph.nodes.length > 0,
+});
+
+const ADD_REROUTE_POINT_COMMAND = "ADD_REROUTE_POINT_COMMAND";
+baklavaView.commandHandler.registerCommand(ADD_REROUTE_POINT_COMMAND, {
+    execute: (context) => {
+        // 这个命令主要用于显示在上下文菜单中
+        // 实际的添加重路由点功能通过双击连接线实现
+        console.log("Add reroute point command executed", context);
+    },
+    canExecute: () => true,
 });
 baklavaView.settings.toolbar.commands = [
     ...DEFAULT_TOOLBAR_COMMANDS,
@@ -111,6 +127,9 @@ editor.registerNodeType(DynamicNode);
 editor.registerNodeType(UpdateTestNode);
 editor.registerNodeType(ReactiveOutputTestNode);
 editor.registerNodeType(MultiInputNode);
+
+
+
 
 const calculate = async () => {
     console.log(await engine.runOnce("def"));

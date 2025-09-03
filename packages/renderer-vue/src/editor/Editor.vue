@@ -155,6 +155,8 @@ import Minimap from "../components/Minimap.vue";
 import NodePalette from "../nodepalette/NodePalette.vue";
 import Toolbar from "../toolbar/Toolbar.vue";
 import ContextMenu from "../contextmenu/ContextMenu.vue";
+import { createRerouteService, createRerouteSelection } from "../connection/rerouteService";
+import { registerDeleteReroutePointCommand } from "../connection/deleteReroutePoint.command";
 
 const props = defineProps<{ viewModel: IBaklavaViewModel }>();
 
@@ -178,6 +180,17 @@ provide("connectionSelection", {
     selectConnection,
     unselectConnection,
 });
+
+// 提供重路由服务
+const rerouteService = createRerouteService();
+provide("rerouteService", rerouteService);
+
+// 提供重路由选择状态管理
+const rerouteSelection = createRerouteSelection();
+provide("rerouteSelection", rerouteSelection);
+
+// 注册删除重路由点命令
+registerDeleteReroutePointCommand(rerouteService, rerouteSelection, props.viewModel.commandHandler);
 
 const nodes = computed(() => props.viewModel.displayedGraph.nodes);
 const dragMoves = computed(() => props.viewModel.displayedGraph.nodes.map((n) => useDragMove(toRef(n, "position"))));
@@ -341,4 +354,14 @@ onMounted(() => {
 /* Node highlight */
 :global(.baklava-node.--search-match) { outline: 2px dashed #3fa7ff; outline-offset: 2px; }
 :global(.baklava-node.--search-active-match) { outline: 2px solid #3fa7ff; box-shadow: 0 0 0 3px rgba(63,167,255,0.35); }
+</style>
+
+<style>
+/* Enable interactions for reroute points and connection paths even though the SVG container disables pointer events */
+.baklava-editor .connections-container circle.__reroute-dot {
+  pointer-events: all !important;
+}
+.baklava-editor .connections-container path.baklava-connection {
+  pointer-events: stroke !important;
+}
 </style>

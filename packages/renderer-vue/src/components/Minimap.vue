@@ -12,11 +12,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch, inject } from "vue";
 import { AbstractNode } from "@baklavajs/core";
 import { getDomElements, getDomElementOfNode } from "../connection/domResolver";
 import { getPortCoordinates } from "../connection/portCoordinates";
 import { useGraph, useViewModel } from "../utility";
+import type { IRerouteService } from "../connection/rerouteService";
 
 interface IRect {
     x1: number;
@@ -27,6 +28,7 @@ interface IRect {
 
 const { viewModel } = useViewModel();
 const { graph } = useGraph();
+const rerouteService = inject<IRerouteService | undefined>("rerouteService");
 
 const canvas = ref<HTMLCanvasElement | null>(null);
 const showViewBounds = ref(false);
@@ -112,15 +114,32 @@ const updateCanvas = () => {
     for (const c of graph.value.connections) {
         const [origX1, origY1] = getPortCoordinates(getDomElements(c.from));
         const [origX2, origY2] = getPortCoordinates(getDomElements(c.to));
-        const [x1, y1] = transformCoordinates(origX1, origY1);
-        const [x2, y2] = transformCoordinates(origX2, origY2);
+
+        // Gather points including reroute points in editor space
+        const pointsEditor: [number, number][] = [];
+        pointsEditor.push([origX1, origY1]);
+        const rp = rerouteService?.getReroutePointsForConnection(c.id) ?? [];
+        for (const p of rp) {
+            pointsEditor.push([p.x, p.y]);
+        }
+        pointsEditor.push([origX2, origY2]);
+
+        // Transform to minimap space
+        const points = pointsEditor.map(([px, py]) => transformCoordinates(px, py));
+
         ctx.beginPath();
-        ctx.moveTo(x1, y1);
+        ctx.moveTo(points[0][0], points[0][1]);
         if (viewModel.value.settings.useStraightConnections) {
-            ctx.lineTo(x2, y2);
+            for (let i = 1; i < points.length; i++) {
+                ctx.lineTo(points[i][0], points[i][1]);
+            }
         } else {
-            const dx = 0.3 * Math.abs(x1 - x2);
-            ctx.bezierCurveTo(x1 + dx, y1, x2 - dx, y2, x2, y2);
+            for (let i = 1; i < points.length; i++) {
+                const [x1, y1] = points[i - 1];
+                const [x2, y2] = points[i];
+                const dx = 0.3 * Math.abs(x1 - x2);
+                ctx.bezierCurveTo(x1 + dx, y1, x2 - dx, y2, x2, y2);
+            }
         }
         ctx.stroke();
     }
