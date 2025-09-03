@@ -28,7 +28,7 @@
             <div v-if="viewModel.settings.nodes.resizable" class="__resize-handle" @mousedown="startResize" />
 
         <slot name="title">
-            <div class="__title" @pointerdown.self.stop="startDrag" @contextmenu.prevent="openContextMenu">
+            <div class="__title" @pointerdown.self.stop="startDrag" @contextmenu.prevent="openContextMenu" @dblclick.stop="startRenaming">
                 <template v-if="!renaming">
                     <div class="__title-label">
                         {{ node.title }}
@@ -181,6 +181,13 @@ const onContextMenuClick = async (action: string) => {
             switchGraph((props.node as AbstractNode & IGraphNode).template);
             break;
     }
+};
+
+const startRenaming = async () => {
+    tempName.value = (props.node as any).title;
+    renaming.value = true;
+    await nextTick();
+    renameInputEl.value?.focus();
 };
 
 const doneRenaming = () => {
