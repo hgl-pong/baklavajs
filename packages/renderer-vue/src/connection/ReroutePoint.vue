@@ -168,8 +168,8 @@ export default defineComponent({
 }
 
 .baklava-reroute-point.--selected .__reroute-dot {
-  outline: 2px solid var(--baklava-node-interface-port-color, #3b82f6);
-  outline-offset: 2px;
+  stroke: var(--baklava-node-color-selected);
+  stroke-width: 3;
 }
 
 .baklava-reroute-point.--dragging .__reroute-dot {
