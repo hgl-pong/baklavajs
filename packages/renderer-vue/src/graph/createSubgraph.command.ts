@@ -18,7 +18,7 @@ import type { SwitchGraph } from "./switchGraph";
 import { SubgraphInputNode, SubgraphOutputNode } from "./subgraphInterfaceNodes";
 
 export const CREATE_SUBGRAPH_COMMAND = "CREATE_SUBGRAPH";
-export type CreateSubgraphCommand = ICommand<void>;
+export type CreateSubgraphCommand = ICommand<{ name?: string }, [args?: { name?: string }]>;
 
 const IGNORE_NODE_TYPES = [GRAPH_INPUT_NODE_TYPE, GRAPH_OUTPUT_NODE_TYPE];
 
@@ -31,13 +31,13 @@ export function registerCreateSubgraphCommand(
         return displayedGraph.value.selectedNodes.filter((n) => !IGNORE_NODE_TYPES.includes(n.type)).length > 0;
     };
 
-    const createSubgraph = () => {
+    const createSubgraph = (args?: { name?: string }) => {
         const { viewModel } = useViewModel();
         const graph = displayedGraph.value;
         const editor = displayedGraph.value.editor;
 
         if (graph.selectedNodes.length === 0) {
-            return;
+            return { name: args?.name };
         }
 
         const selectedNodes = graph.selectedNodes.filter((n) => !IGNORE_NODE_TYPES.includes(n.type));
@@ -98,6 +98,11 @@ export function registerCreateSubgraphCommand(
             ),
         ) as GraphTemplate;
 
+        // Set the name if provided
+        if (args?.name) {
+            subgraphTemplate.name = args.name;
+        }
+
         editor.addGraphTemplate(subgraphTemplate);
         const nt = editor.nodeTypes.get(getGraphNodeTypeString(subgraphTemplate));
         if (!nt) {
@@ -142,6 +147,8 @@ export function registerCreateSubgraphCommand(
 
         displayedGraph.value.panning = { ...graph.panning };
         displayedGraph.value.scaling = graph.scaling;
+        
+        return { name: args?.name };
     };
 
     handler.registerCommand<CreateSubgraphCommand>(CREATE_SUBGRAPH_COMMAND, {

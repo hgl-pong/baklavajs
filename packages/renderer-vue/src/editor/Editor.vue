@@ -132,6 +132,16 @@
         </slot>
 
         <div v-if="selectionBox.isSelecting" class="selection-box" :style="selectionBox.getStyles()" />
+        
+        <!-- Subgraph Name Dialog -->
+        <SubgraphNameDialog
+            :model-value="showSubgraphNameDialog"
+            :default-name="suggestedSubgraphName"
+            :existing-names="existingSubgraphNames"
+            @update:model-value="showSubgraphNameDialog = $event"
+            @confirm="onSubgraphNameConfirm"
+            @cancel="onSubgraphNameCancel"
+        />
     </div>
 </template>
 
@@ -155,8 +165,11 @@ import Minimap from "../components/Minimap.vue";
 import NodePalette from "../nodepalette/NodePalette.vue";
 import Toolbar from "../toolbar/Toolbar.vue";
 import ContextMenu from "../contextmenu/ContextMenu.vue";
+import SubgraphNameDialog from "../components/SubgraphNameDialog.vue";
 import { createRerouteService, createRerouteSelection } from "../connection/rerouteService";
 import { registerDeleteReroutePointCommand } from "../connection/deleteReroutePoint.command";
+import { CREATE_SUBGRAPH_COMMAND } from "../graph/createSubgraph.command";
+import { getExistingSubgraphNames, generateDefaultSubgraphName, suggestSubgraphName } from "../utils/subgraphNameUtils";
 
 const props = defineProps<{ viewModel: IBaklavaViewModel }>();
 
@@ -299,6 +312,40 @@ const stopDrag = () => {
 };
 
 const searchInputEl = ref<HTMLInputElement | null>(null);
+
+// Subgraph naming dialog state
+const showSubgraphNameDialog = ref(false);
+const existingSubgraphNames = computed(() => getExistingSubgraphNames(props.viewModel.editor));
+const suggestedSubgraphName = computed(() => {
+    const selectedNodes = props.viewModel.displayedGraph.selectedNodes;
+    return suggestSubgraphName(selectedNodes, existingSubgraphNames.value);
+});
+
+// Intercept CREATE_SUBGRAPH_COMMAND to show naming dialog
+const originalCreateSubgraphCommand = props.viewModel.commandHandler.executeCommand;
+props.viewModel.commandHandler.executeCommand = (commandName: string, throwOnNonexisting?: boolean, ...args: any[]) => {
+    if (commandName === CREATE_SUBGRAPH_COMMAND) {
+        // Show naming dialog instead of executing command directly
+        showSubgraphNameDialog.value = true;
+        return;
+    }
+    if (throwOnNonexisting === true) {
+        return (originalCreateSubgraphCommand as any).call(props.viewModel.commandHandler, commandName, true, ...args);
+    } else {
+        return (originalCreateSubgraphCommand as any).call(props.viewModel.commandHandler, commandName, false, ...args);
+    }
+};
+
+// Dialog event handlers
+const onSubgraphNameConfirm = (name: string) => {
+    showSubgraphNameDialog.value = false;
+    // Execute the original command with the provided name
+    (originalCreateSubgraphCommand as any).call(props.viewModel.commandHandler, CREATE_SUBGRAPH_COMMAND, false, { name });
+};
+
+const onSubgraphNameCancel = () => {
+    showSubgraphNameDialog.value = false;
+};
 
 onMounted(() => {
     // autofocus when opening search
