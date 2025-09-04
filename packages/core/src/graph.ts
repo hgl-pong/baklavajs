@@ -346,6 +346,20 @@ export class Graph implements IBaklavaEventEmitter, IBaklavaTapable {
                 } else {
                     const conn = new Connection(fromIf, toIf);
                     conn.id = c.id;
+                    
+                    // Load reroute points if they exist
+                    if (c.reroutePoints && Array.isArray(c.reroutePoints)) {
+                        for (const rp of c.reroutePoints) {
+                            if (rp.id && typeof rp.x === 'number' && typeof rp.y === 'number') {
+                                conn.reroutePoints.push({
+                                    id: rp.id,
+                                    x: rp.x,
+                                    y: rp.y
+                                });
+                            }
+                        }
+                    }
+                    
                     this.internalAddConnection(conn);
                 }
             }
@@ -369,6 +383,7 @@ export class Graph implements IBaklavaEventEmitter, IBaklavaTapable {
                 id: c.id,
                 from: c.from.id,
                 to: c.to.id,
+                reroutePoints: c.reroutePoints.length > 0 ? [...c.reroutePoints] : undefined,
             })),
             inputs: this.inputs,
             outputs: this.outputs,

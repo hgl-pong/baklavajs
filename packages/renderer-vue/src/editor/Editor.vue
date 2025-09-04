@@ -182,7 +182,7 @@ provide("connectionSelection", {
 });
 
 // 提供重路由服务
-const rerouteService = createRerouteService();
+const rerouteService = createRerouteService(props.viewModel.displayedGraph);
 provide("rerouteService", rerouteService);
 
 // 提供重路由选择状态管理
@@ -191,6 +191,11 @@ provide("rerouteSelection", rerouteSelection);
 
 // 注册删除重路由点命令
 registerDeleteReroutePointCommand(rerouteService, rerouteSelection, props.viewModel.commandHandler);
+
+// 监听图变化，同步重路由服务
+watch(() => props.viewModel.displayedGraph, () => {
+  rerouteService.syncWithCoreModel();
+}, { immediate: true });
 
 const nodes = computed(() => props.viewModel.displayedGraph.nodes);
 const dragMoves = computed(() => props.viewModel.displayedGraph.nodes.map((n) => useDragMove(toRef(n, "position"))));

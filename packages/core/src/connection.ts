@@ -15,6 +15,12 @@ export interface IConnectionState extends Record<string, any> {
     from: string;
     /** id of the target interface */
     to: string;
+    /** reroute points for the connection */
+    reroutePoints?: Array<{
+        id: string;
+        x: number;
+        y: number;
+    }>;
 }
 
 export class Connection implements IConnection, IBaklavaEventEmitter {
@@ -22,6 +28,11 @@ export class Connection implements IConnection, IBaklavaEventEmitter {
     public from: NodeInterface;
     public to: NodeInterface;
     public destructed = false;
+    public reroutePoints: Array<{
+        id: string;
+        x: number;
+        y: number;
+    }> = [];
 
     public events = {
         destruct: new BaklavaEvent<void, Connection>(this),
@@ -45,6 +56,69 @@ export class Connection implements IConnection, IBaklavaEventEmitter {
         this.from.connectionCount--;
         this.to.connectionCount--;
         this.destructed = true;
+    }
+
+    /**
+     * Add a reroute point to the connection
+     * @param x X coordinate
+     * @param y Y coordinate
+     * @param id Optional ID (will be generated if not provided)
+     * @returns The created reroute point
+     */
+    public addReroutePoint(x: number, y: number, id?: string): { id: string; x: number; y: number } {
+        const reroutePoint = {
+            id: id || `rp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            x,
+            y,
+        };
+        this.reroutePoints.push(reroutePoint);
+        return reroutePoint;
+    }
+
+    /**
+     * Remove a reroute point from the connection
+     * @param id ID of the reroute point to remove
+     * @returns True if the point was found and removed, false otherwise
+     */
+    public removeReroutePoint(id: string): boolean {
+        const index = this.reroutePoints.findIndex(point => point.id === id);
+        if (index !== -1) {
+            this.reroutePoints.splice(index, 1);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Update a reroute point's position
+     * @param id ID of the reroute point to update
+     * @param x New X coordinate
+     * @param y New Y coordinate
+     * @returns True if the point was found and updated, false otherwise
+     */
+    public updateReroutePoint(id: string, x: number, y: number): boolean {
+        const point = this.reroutePoints.find(point => point.id === id);
+        if (point) {
+            point.x = x;
+            point.y = y;
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Clear all reroute points from the connection
+     */
+    public clearReroutePoints(): void {
+        this.reroutePoints.length = 0;
+    }
+
+    /**
+     * Get all reroute points for the connection
+     * @returns Array of reroute points
+     */
+    public getReroutePoints(): Array<{ id: string; x: number; y: number }> {
+        return [...this.reroutePoints];
     }
 }
 

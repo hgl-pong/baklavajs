@@ -45,6 +45,7 @@ export default defineConfig({
                     { text: "Search and Selection", link: "/visual-editor/search-and-selection.md" },
                     { text: "Toolbar", link: "/visual-editor/toolbar.md" },
                     { text: "Sidebar", link: "/visual-editor/sidebar.md" },
+                    { text: "Reroute Points", link: "/visual-editor/reroute-points.md" },
                     { text: "Customization", link: "/visual-editor/customization.md" },
                 ],
             },
