@@ -27,6 +27,15 @@ yarn clean
 
 # Generate TypeDoc API documentation
 yarn generate-api-docs
+
+# Run single test file (specific package)
+cd packages/core && yarn test -- test/graph.spec.ts
+
+# Run tests in watch mode
+cd packages/core && yarn test --watch
+
+# Check TypeScript compilation
+cd packages/core && npx tsc --noEmit
 ```
 
 ### Vue Renderer Development
@@ -34,8 +43,14 @@ yarn generate-api-docs
 # Start development server for playground
 yarn playground
 
-# or directly in renderer-vue package
+# Start Vite dev server with hot reload
 cd packages/renderer-vue && yarn dev
+
+# Build Vue renderer
+cd packages/renderer-vue && yarn build
+
+# Build for Electron
+cd packages/renderer-vue && yarn build:electron
 ```
 
 ### Electron App Development
@@ -59,11 +74,23 @@ yarn docs:dev
 yarn docs:build
 ```
 
+### Package-Specific Development
+```bash
+# Build individual package
+cd packages/core && yarn build
+
+# Test individual package  
+cd packages/core && yarn test
+
+# Lint individual package
+cd packages/core && yarn lint
+```
+
 ## Architecture Overview
 
 ### Monorepo Structure
 
-This project uses Lerna to manage a monorepo with the following packages:
+This project uses Lerna + Nx to manage a monorepo with the following packages:
 
 | Package | Description | Key Dependencies |
 |---------|-------------|------------------|
@@ -122,6 +149,21 @@ The Vue renderer uses Vite instead of tsc:
 }
 ```
 
+## Nx Workspace Integration
+
+The project uses Nx for intelligent task orchestration:
+
+```bash
+# Run build with Nx caching
+npx nx run-many --target=build
+
+# Run tests with Nx caching  
+npx nx run-many --target=test
+
+# View project graph
+npx nx graph
+```
+
 ## Key Development Patterns
 
 ### Node Creation
@@ -165,6 +207,21 @@ The renderer uses a comprehensive command system for editor operations:
 - **Test location**: Each package has its own `test/` directory
 - **Example nodes** in test files for integration testing
 
+### Test Commands
+```bash
+# Run tests with coverage
+yarn test --coverage
+
+# Run specific test file
+cd packages/core && yarn test -- test/graph.spec.ts
+
+# Run tests in watch mode
+cd packages/core && yarn test --watch
+
+# Debug tests
+cd packages/core && node --inspect-brk node_modules/.bin/jest --runInBand
+```
+
 ## Configuration Files
 
 ### TypeScript
@@ -204,6 +261,57 @@ The project includes Electron app support with:
 - Builder configuration for cross-platform distribution
 - Development and production build modes
 
+## CI/CD Pipeline
+
+GitHub Actions workflows provide:
+- **Build validation** on every push
+- **Test execution** across all packages
+- **Automatic linting** with ESLint
+- **Node.js 18** environment
+
+## Debugging & Troubleshooting
+
+### Common Issues
+
+1. **TypeScript compilation errors**: Run `npx tsc --noEmit` in individual packages
+2. **Vue component issues**: Check Vue devtools in browser
+3. **Build failures**: Clean and rebuild with `yarn clean && yarn build`
+4. **Test failures**: Run tests individually to isolate issues
+
+### Debug Commands
+```bash
+# Debug TypeScript compilation
+cd packages/core && npx tsc --noEmit --extendedDiagnostics
+
+# Debug Jest tests
+cd packages/core && node --inspect-brk node_modules/.bin/jest --runInBand
+
+# Analyze bundle size
+cd packages/renderer-vue && yarn build && npx vite-bundle-analyzer
+```
+
+## Code Search Patterns
+
+### Find Node Definitions
+```bash
+rg "defineNode" --type ts
+```
+
+### Find Interface Usage  
+```bash
+rg "NumberInterface" --type ts
+```
+
+### Find Vue Components
+```bash
+rg "defineComponent" --type vue
+```
+
+### Find Event Handlers
+```bash
+rg "on.*Event" --type ts
+```
+
 ## Important File Locations
 
 - **Package entry points**: `packages/*/src/index.ts`
@@ -212,3 +320,22 @@ The project includes Electron app support with:
 - **Test files**: `packages/*/test/`
 - **Documentation**: `docs/`
 - **Electron config**: `electron/`
+- **API documentation**: `docs/public/api/`
+- **Build outputs**: `packages/*/dist/`
+- **Coverage reports**: `packages/*/coverage/`
+
+## Development Workflow Tips
+
+1. **Start with core package**: Most changes begin in `@baklavajs/core`
+2. **Test changes incrementally**: Use package-specific test commands
+3. **Use Vite dev server**: For rapid UI development with hot reload
+4. **Check TypeScript types**: Always run `npx tsc --noEmit` after changes
+5. **Follow existing patterns**: Mimic code style and architecture patterns
+6. **Update documentation**: Include JSDoc comments for new APIs
+
+## Performance Considerations
+
+- **Graph size**: Large graphs may require optimization
+- **Node complexity**: Complex nodes should implement caching
+- **Event system**: Use event batching for performance-critical operations
+- **Rendering**: Vue components should be optimized with `v-memo` where appropriate

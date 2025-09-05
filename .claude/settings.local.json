@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(yarn build)"
+      "Bash(yarn build)",
+      "Bash(dir:*)",
+      "Bash(yarn test:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx eslint:*)"
     ],
     "deny": [],
     "ask": []
