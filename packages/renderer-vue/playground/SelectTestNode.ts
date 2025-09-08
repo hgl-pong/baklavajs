@@ -5,6 +5,8 @@ import { numberType, stringType } from "./interfaceTypes";
 
 export default defineNode({
     type: "SelectTestNode",
+    titleBackgroundColor: "#20c997",
+    titleForegroundColor: "#ffffff",
     inputs: {
         simple: () => new SelectInterface("Simple", "A", ["A", "B", "C"]).use(setType, stringType),
         advanced: () =>

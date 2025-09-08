@@ -5,6 +5,8 @@ import { booleanType, stringType } from "./interfaceTypes";
 
 export default defineNode({
     type: "OutputNode",
+    titleBackgroundColor: "#dc3545",
+    titleForegroundColor: "#ffffff",
     inputs: {
         text: () => new TextInputInterface("Text", "").use(setType, stringType),
         boolean: () => new CheckboxInterface("Boolean", false).use(setType, booleanType),

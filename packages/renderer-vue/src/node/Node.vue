@@ -28,7 +28,13 @@
             <div v-if="viewModel.settings.nodes.resizable" class="__resize-handle" @mousedown="startResize" />
 
         <slot name="title">
-            <div class="__title" @pointerdown.self.stop="startDrag" @contextmenu.prevent="openContextMenu" @dblclick.stop="startRenaming">
+            <div 
+                class="__title" 
+                :style="titleStyles"
+                @pointerdown.self.stop="startDrag" 
+                @contextmenu.prevent="openContextMenu" 
+                @dblclick.stop="startRenaming"
+            >
                 <template v-if="!renaming">
                     <div class="__title-label">
                         {{ node.title }}
@@ -41,6 +47,32 @@
                             :position="{ x: 0, y: 0 }"
                             @click="onContextMenuClick"
                         />
+                        
+                        <!-- Color Picker Dialog -->
+                        <div v-if="showColorPicker" class="color-picker-dialog">
+                            <div class="color-picker-content">
+                                <h3>Change Title Color</h3>
+                                <div class="color-section">
+                                    <label>Background Color:</label>
+                                    <ColorPicker
+                                        v-model="tempTitleBackgroundColor"
+                                        :node="node"
+                                        @update:modelValue="onTitleBackgroundColorChange"
+                                    />
+                                </div>
+                                <div class="color-section">
+                                    <label>Text Color:</label>
+                                    <ColorPicker
+                                        v-model="tempTitleForegroundColor"
+                                        :node="node"
+                                        @update:modelValue="onTitleForegroundColorChange"
+                                    />
+                                </div>
+                                <div class="color-picker-actions">
+                                    <button @click="closeColorPicker" class="btn-done">Done</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </template>
                 <template v-else>
@@ -80,6 +112,7 @@ import { useGraph, useViewModel } from "../utility";
 import { ContextMenu } from "../contextmenu";
 import VerticalDots from "../icons/VerticalDots.vue";
 import NodeInterface from "./NodeInterface.vue";
+import ColorPicker from "../contextmenu/ColorPicker.vue";
 const props = withDefaults(
     defineProps<{
         node: AbstractNode & { comment?: string };
@@ -109,10 +142,15 @@ let resizeStartWidth = 0;
 let resizeStartMouseX = 0;
 
 const showContextMenu = ref(false);
+const showColorPicker = ref(false);
+const tempTitleBackgroundColor = ref("");
+const tempTitleForegroundColor = ref("");
+
 const contextMenuItems = computed(() => {
     const items = [
         { value: "rename", label: "Rename" },
         { value: "editComment", label: "Edit Comment" },
+        { value: "changeTitleColor", label: "Change Title Color" },
         { value: "delete", label: "Delete" },
     ];
 
@@ -140,6 +178,17 @@ const styles = computed(() => ({
     "--width": `${(props.node as any).width ?? viewModel.value.settings.nodes.defaultWidth}px`,
     position: "absolute" as const,
 }));
+
+const titleStyles = computed(() => {
+    const styles: any = {};
+    if (props.node.titleBackgroundColor) {
+        styles.backgroundColor = props.node.titleBackgroundColor;
+    }
+    if (props.node.titleForegroundColor) {
+        styles.color = props.node.titleForegroundColor;
+    }
+    return styles;
+});
 
 const displayedInputs = computed(() => Object.values((props.node as any).inputs).filter((ni: any) => !ni.hidden) as any[]);
 const displayedOutputs = computed(() => Object.values((props.node as any).outputs).filter((ni: any) => !ni.hidden) as any[]);
@@ -176,6 +225,11 @@ const onContextMenuClick = async (action: string) => {
             editingComment.value = true;
             await nextTick();
             commentInputEl.value?.focus();
+            break;
+        case "changeTitleColor":
+            tempTitleBackgroundColor.value = props.node.titleBackgroundColor || "";
+            tempTitleForegroundColor.value = props.node.titleForegroundColor || "";
+            showColorPicker.value = true;
             break;
         case "editSubgraph":
             switchGraph((props.node as AbstractNode & IGraphNode).template);
@@ -235,6 +289,20 @@ const doResize = (ev: MouseEvent) => {
 
 const stopResize = () => {
     isResizing.value = false;
+};
+
+const onTitleBackgroundColorChange = (color: string) => {
+    props.node.titleBackgroundColor = color;
+    tempTitleBackgroundColor.value = color;
+};
+
+const onTitleForegroundColorChange = (color: string) => {
+    props.node.titleForegroundColor = color;
+    tempTitleForegroundColor.value = color;
+};
+
+const closeColorPicker = () => {
+    showColorPicker.value = false;
 };
 
 onMounted(() => {
@@ -310,5 +378,77 @@ onBeforeUnmount(() => {
     font-size: 0.75em;
     padding: 0;
     outline: none;
+}
+
+/* Color Picker Dialog */
+.color-picker-dialog {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    margin-top: 4px;
+}
+
+.color-picker-content {
+    background: var(--baklava-context-menu-background, #000000cc);
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    min-width: 250px;
+}
+
+.color-picker-content h3 {
+    margin: 0 0 16px 0;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.color-section {
+    margin-bottom: 16px;
+}
+
+.color-section:last-child {
+    margin-bottom: 0;
+}
+
+.color-section label {
+    display: block;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 12px;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.color-picker-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-done {
+    background: var(--baklava-control-color-primary, #5379b5);
+    color: white;
+    border: none;
+    padding: 8px 24px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+}
+
+.btn-done:hover {
+    background: var(--baklava-control-color-hover, #6c8cc7);
+}
+
+.btn-done:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(83, 121, 181, 0.4);
 }
 </style>

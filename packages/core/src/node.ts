@@ -31,6 +31,8 @@ export interface INodeState<I, O> {
     comment?: string;
     width?: number;
     height?: number;
+    titleBackgroundColor?: string;
+    titleForegroundColor?: string;
     inputs: NodeInterfaceDefinitionStates<I> & NodeInterfaceDefinitionStates<Record<string, NodeInterface<any>>>;
     outputs: NodeInterfaceDefinitionStates<O> & NodeInterfaceDefinitionStates<Record<string, NodeInterface<any>>>;
 }
@@ -38,6 +40,8 @@ export interface INodeState<I, O> {
 export abstract class AbstractNode implements IBaklavaEventEmitter, IBaklavaTapable {
     protected _title = "";
     protected _comment = "";
+    protected _titleBackgroundColor = "";
+    protected _titleForegroundColor = "";
 
     /** Type of the node */
     public abstract readonly type: string;
@@ -59,6 +63,10 @@ export abstract class AbstractNode implements IBaklavaEventEmitter, IBaklavaTapa
         removeOutput: new BaklavaEvent<NodeInterface, AbstractNode>(this),
         beforeTitleChanged: new PreventableBaklavaEvent<string, AbstractNode>(this),
         titleChanged: new BaklavaEvent<string, AbstractNode>(this),
+        beforeTitleBackgroundColorChanged: new PreventableBaklavaEvent<string, AbstractNode>(this),
+        titleBackgroundColorChanged: new BaklavaEvent<string, AbstractNode>(this),
+        beforeTitleForegroundColorChanged: new PreventableBaklavaEvent<string, AbstractNode>(this),
+        titleForegroundColorChanged: new BaklavaEvent<string, AbstractNode>(this),
         update: new BaklavaEvent<INodeUpdateEventData | null, AbstractNode>(this),
     } as const;
 
@@ -96,6 +104,28 @@ export abstract class AbstractNode implements IBaklavaEventEmitter, IBaklavaTapa
     }
     public set comment(v: string) {
         this._comment = v;
+    }
+
+    /** Custom title background color for the node. */
+    public get titleBackgroundColor() {
+        return this._titleBackgroundColor;
+    }
+    public set titleBackgroundColor(v: string) {
+        if (!this.events.beforeTitleBackgroundColorChanged.emit(v).prevented) {
+            this._titleBackgroundColor = v;
+            this.events.titleBackgroundColorChanged.emit(v);
+        }
+    }
+
+    /** Custom title foreground color for the node. */
+    public get titleForegroundColor() {
+        return this._titleForegroundColor;
+    }
+    public set titleForegroundColor(v: string) {
+        if (!this.events.beforeTitleForegroundColorChanged.emit(v).prevented) {
+            this._titleForegroundColor = v;
+            this.events.titleForegroundColorChanged.emit(v);
+        }
     }
 
     /**
@@ -147,6 +177,8 @@ export abstract class AbstractNode implements IBaklavaEventEmitter, IBaklavaTapa
         this.id = state.id;
         this._title = state.title;
         this._comment = state.comment || "";
+        this._titleBackgroundColor = state.titleBackgroundColor || "";
+        this._titleForegroundColor = state.titleForegroundColor || "";
         
         // Load width and height if they exist
         if (state.width) {
@@ -182,6 +214,8 @@ export abstract class AbstractNode implements IBaklavaEventEmitter, IBaklavaTapa
             comment: this.comment,
             width: (this as any).width,
             height: (this as any).height,
+            titleBackgroundColor: this._titleBackgroundColor || undefined,
+            titleForegroundColor: this._titleForegroundColor || undefined,
             inputs: inputStates,
             outputs: outputStates,
         };

@@ -3,6 +3,8 @@ import { CheckboxInterface, NumberInterface, SelectInterface, TextInputInterface
 
 export default defineDynamicNode({
     type: "DynamicNode",
+    titleBackgroundColor: "#6610f2",
+    titleForegroundColor: "#ffffff",
     inputs: {
         select: () => new SelectInterface("Type", "Two Strings", ["Two Strings", "Four Numbers", "One Boolean"]),
     },

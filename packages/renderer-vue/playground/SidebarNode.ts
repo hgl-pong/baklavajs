@@ -6,6 +6,8 @@ import SidebarButton from "./SidebarButton.vue";
 
 export default defineNode({
     type: "SidebarNode",
+    titleBackgroundColor: "#17a2b8",
+    titleForegroundColor: "#ffffff",
     inputs: {
         openButton: () =>
             new NodeInterface("Open Sidebar", undefined).setComponent(markRaw(SidebarButton)).setPort(false),

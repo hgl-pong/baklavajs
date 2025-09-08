@@ -10,6 +10,12 @@ export default class AdvancedNode extends AbstractNode {
 
     private counter = 0;
 
+    constructor() {
+        super();
+        this._titleBackgroundColor = "#6f42c1";
+        this._titleForegroundColor = "#ffffff";
+    }
+
     public onPlaced() {
         this.addInput(
             "addInput",

@@ -14,6 +14,8 @@ import { booleanType, numberType, stringType } from "./interfaceTypes";
 
 export default defineNode({
     type: "InterfaceTestNode",
+    titleBackgroundColor: "#e83e8c",
+    titleForegroundColor: "#ffffff",
     inputs: {
         button: () => new ButtonInterface("ButtonInterface", () => alert("It works")),
         checkbox: () => new CheckboxInterface("CheckboxInterface", false).use(setType, booleanType),

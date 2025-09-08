@@ -10,7 +10,9 @@
       "Bash(npm run build)",
       "Bash(npm run build:esm)",
       "Bash(echo:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(yarn playground:*)",
+      "Bash(yarn dev:*)"
     ],
     "deny": [],
     "ask": []

@@ -3,6 +3,8 @@ import { CheckboxInterface, NumberInterface, TextInputInterface, SelectInterface
 
 export default defineNode({
     type: "TestNode",
+    titleBackgroundColor: "#28a745",
+    titleForegroundColor: "#ffffff",
     inputs: {
         input: () => new CheckboxInterface("Input", false),
         test: () => new NumberInterface("Test", 5),

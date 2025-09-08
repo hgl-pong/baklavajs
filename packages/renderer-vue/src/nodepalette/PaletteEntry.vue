@@ -1,6 +1,6 @@
 <template>
     <div class="baklava-node --palette" :data-node-type="type">
-        <div class="__title">
+        <div class="__title" :style="titleStyles">
             <div class="__title-label" v-html="highlightedTitle">
             </div>
             <div v-if="hasContextMenu" class="__menu">
@@ -21,6 +21,7 @@
 <script lang="ts">
 import { computed, defineComponent, ref } from "vue";
 import { GRAPH_NODE_TYPE_PREFIX } from "@baklavajs/core";
+import { getDefaultNodeColor } from "@baklavajs/core";
 
 import { IMenuItem, ContextMenu } from "../contextmenu";
 import VerticalDots from "../icons/VerticalDots.vue";
@@ -48,6 +49,17 @@ export default defineComponent({
 
         const showContextMenu = ref(false);
         const hasContextMenu = computed(() => props.type.startsWith(GRAPH_NODE_TYPE_PREFIX));
+
+        // 计算节点的默认颜色样式
+        const titleStyles = computed(() => {
+            const defaultColor = getDefaultNodeColor(props.type);
+            return {
+                'background-color': defaultColor.backgroundColor,
+                'color': defaultColor.foregroundColor,
+                '--baklava-node-title-color-background': defaultColor.backgroundColor,
+                '--baklava-node-title-color-foreground': defaultColor.foregroundColor
+            };
+        });
 
         const highlightedTitle = computed(() => {
             if (!props.searchQuery || !props.searchQuery.trim()) {
@@ -96,7 +108,7 @@ export default defineComponent({
             }
         };
 
-        return { showContextMenu, hasContextMenu, contextMenuItems, openContextMenu, onContextMenuClick, highlightedTitle };
+        return { showContextMenu, hasContextMenu, contextMenuItems, openContextMenu, onContextMenuClick, highlightedTitle, titleStyles };
     },
 });
 </script>

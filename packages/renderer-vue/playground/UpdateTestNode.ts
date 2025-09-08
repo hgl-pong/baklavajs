@@ -20,6 +20,8 @@ export default class UpdateTestNode extends Node<Inputs, Record<string, never>> 
         super();
         this.initializeIo();
         this.title = "UpdateTestNode";
+        this._titleBackgroundColor = "#ffc107";
+        this._titleForegroundColor = "#000000";
     }
 
     override onPlaced() {

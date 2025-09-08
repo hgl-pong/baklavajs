@@ -1,5 +1,6 @@
 import type { NodeInterface, NodeInterfaceDefinition } from "./nodeInterface";
 import { CalculateFunction, Node } from "./node";
+import { getDefaultNodeColor } from "./nodeColors";
 
 export type NodeConstructor<I, O> = new () => Node<I, O>;
 export type NodeInstanceOf<T> = T extends new () => Node<infer A, infer B> ? Node<A, B> : never;
@@ -14,6 +15,10 @@ export interface INodeDefinition<I, O> {
     type: string;
     /** Default title when creating the node. If not specified, it is set to the nodeType */
     title?: string;
+    /** Default title background color for this node type */
+    titleBackgroundColor?: string;
+    /** Default title foreground color for this node type */
+    titleForegroundColor?: string;
     /** Inputs of the node */
     inputs?: InterfaceFactory<I>;
     /** Outputs of the node */
@@ -38,6 +43,22 @@ export function defineNode<I, O>(definition: INodeDefinition<I, O>): new () => N
         constructor() {
             super();
             this._title = definition.title ?? definition.type;
+            
+            // Apply default colors if not specified
+            if (definition.titleBackgroundColor) {
+                this._titleBackgroundColor = definition.titleBackgroundColor;
+            } else {
+                const defaultColor = getDefaultNodeColor(definition.type);
+                this._titleBackgroundColor = defaultColor.backgroundColor;
+            }
+            
+            if (definition.titleForegroundColor) {
+                this._titleForegroundColor = definition.titleForegroundColor;
+            } else {
+                const defaultColor = getDefaultNodeColor(definition.type);
+                this._titleForegroundColor = defaultColor.foregroundColor;
+            }
+            
             this.executeFactory("input", definition.inputs);
             this.executeFactory("output", definition.outputs);
             definition.onCreate?.call(this);

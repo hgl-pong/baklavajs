@@ -1,6 +1,7 @@
 import { InterfaceFactory } from "./defineNode";
 import { Node, CalculateFunction, INodeState } from "./node";
 import { NodeInterface, NodeInterfaceDefinition } from "./nodeInterface";
+import { getDefaultNodeColor } from "./nodeColors";
 
 type Dynamic<T> = T & Record<string, any>;
 
@@ -37,6 +38,10 @@ export interface IDynamicNodeDefinition<I, O> {
     type: string;
     /** Default title when creating the node. If not specified, it is set to the nodeType */
     title?: string;
+    /** Default title background color for this node type */
+    titleBackgroundColor?: string;
+    /** Default title foreground color for this node type */
+    titleForegroundColor?: string;
     /** Inputs of the node */
     inputs?: InterfaceFactory<I>;
     /** Outputs of the node */
@@ -69,6 +74,22 @@ export function defineDynamicNode<I, O>(definition: IDynamicNodeDefinition<I, O>
         constructor() {
             super();
             this._title = definition.title ?? definition.type;
+            
+            // Apply default colors if not specified
+            if (definition.titleBackgroundColor) {
+                this._titleBackgroundColor = definition.titleBackgroundColor;
+            } else {
+                const defaultColor = getDefaultNodeColor(definition.type);
+                this._titleBackgroundColor = defaultColor.backgroundColor;
+            }
+            
+            if (definition.titleForegroundColor) {
+                this._titleForegroundColor = definition.titleForegroundColor;
+            } else {
+                const defaultColor = getDefaultNodeColor(definition.type);
+                this._titleForegroundColor = defaultColor.foregroundColor;
+            }
+            
             this.executeFactory("input", definition.inputs);
             this.executeFactory("output", definition.outputs);
 

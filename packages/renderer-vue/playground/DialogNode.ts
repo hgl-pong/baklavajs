@@ -5,6 +5,8 @@ import { TextInputInterface } from "../src";
 export const DialogNode = defineNode({
     type: "dialog",
     title: "Dialogue",
+    titleBackgroundColor: "#d63384",
+    titleForegroundColor: "#ffffff",
     onCreate() {
         this.width = 400;
     },

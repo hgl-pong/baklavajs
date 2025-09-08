@@ -15,3 +15,4 @@ export * from "./graphNode";
 export * from "./graphTemplate";
 export * from "./node";
 export * from "./nodeInterface";
+export * from "./nodeColors";

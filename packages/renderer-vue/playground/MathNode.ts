@@ -3,6 +3,8 @@ import { NumberInterface, SelectInterface } from "../src";
 
 export default defineNode({
     type: "MathNode",
+    titleBackgroundColor: "#007bff",
+    titleForegroundColor: "#ffffff",
     inputs: {
         number1: () => new NumberInterface("Number", 1),
         number2: () => new NumberInterface("Number", 10),

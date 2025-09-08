@@ -8,6 +8,8 @@ import { stringType } from "./interfaceTypes";
 
 export default defineNode({
     type: "BuilderTestNode",
+    titleBackgroundColor: "#fd7e14",
+    titleForegroundColor: "#ffffff",
     inputs: {
         input1: () => new TextInputInterface("Input 1", "default1").use(setType, stringType),
         input2: () => new TextInputInterface("Input 2", "default2").use(setType, stringType),

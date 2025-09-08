@@ -11,6 +11,8 @@ class ReactiveOutputTestInterface extends NodeInterface<number> {
 
 export default defineNode({
     type: "ReactiveOutputTest",
+    titleBackgroundColor: "#7950f2",
+    titleForegroundColor: "#ffffff",
     inputs: {
         a: () => new ReactiveOutputTestInterface("Test", 3),
     },

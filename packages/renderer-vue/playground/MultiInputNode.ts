@@ -5,6 +5,8 @@ import { stringType } from "./interfaceTypes";
 
 export default defineNode({
     type: "MultiInputNode",
+    titleBackgroundColor: "#6c757d",
+    titleForegroundColor: "#ffffff",
     inputs: {
         data: () =>
             new NodeInterface<string[]>("Data", [])
