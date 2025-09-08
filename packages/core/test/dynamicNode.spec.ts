@@ -1,4 +1,5 @@
-import { defineDynamicNode, DynamicNodeDefinition, NodeInterface, IEngine } from "../src";
+import { defineDynamicNode, DynamicNodeDefinition, NodeInterface } from "../src";
+import { IEngine } from "../src/engine";
 
 describe("Dynamic Node", () => {
     const DynNode = defineDynamicNode({

@@ -1,9 +1,15 @@
 // TODO: Implementation complete - TypeScript and ESLint validation enabled
-import { AbstractNode, Graph, INodeUpdateEventData, CalculationResult } from "@baklavajs/core";
+import { AbstractNode, Graph, INodeUpdateEventData, CalculationResult, IConnection } from "@baklavajs/core";
 import { BaseEngine } from "./baseEngine";
 
 interface ForwardEngineCalculationData {
     __forwardEngineInputs?: Map<string, any>;
+}
+
+interface TargetNodeProcessingContext {
+    node: AbstractNode;
+    connections: IConnection[];
+    inputData: Record<string, any>;
 }
 
 export class ForwardEngine<CalculationData = any> extends BaseEngine<

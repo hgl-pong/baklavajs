@@ -1,4 +1,5 @@
-import { defineNode, IEngine, NodeInterface } from "../src";
+import { defineNode, NodeInterface } from "../src";
+import { IEngine } from "../src/engine";
 
 describe("defineNode", () => {
     it("calls the onCreate lifecycle method correctly", () => {

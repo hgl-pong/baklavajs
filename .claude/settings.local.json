@@ -5,7 +5,12 @@
       "Bash(dir:*)",
       "Bash(yarn test:*)",
       "Bash(npx tsc:*)",
-      "Bash(npx eslint:*)"
+      "Bash(npx eslint:*)",
+      "Bash(npm test:*)",
+      "Bash(npm run build)",
+      "Bash(npm run build:esm)",
+      "Bash(echo:*)",
+      "Bash(node:*)"
     ],
     "deny": [],
     "ask": []

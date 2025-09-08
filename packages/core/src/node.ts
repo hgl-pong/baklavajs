@@ -29,6 +29,8 @@ export interface INodeState<I, O> {
     title: string;
     id: string;
     comment?: string;
+    width?: number;
+    height?: number;
     inputs: NodeInterfaceDefinitionStates<I> & NodeInterfaceDefinitionStates<Record<string, NodeInterface<any>>>;
     outputs: NodeInterfaceDefinitionStates<O> & NodeInterfaceDefinitionStates<Record<string, NodeInterface<any>>>;
 }
@@ -145,6 +147,15 @@ export abstract class AbstractNode implements IBaklavaEventEmitter, IBaklavaTapa
         this.id = state.id;
         this._title = state.title;
         this._comment = state.comment || "";
+        
+        // Load width and height if they exist
+        if (state.width) {
+            (this as any).width = state.width;
+        }
+        if (state.height) {
+            (this as any).height = state.height;
+        }
+        
         Object.entries(state.inputs).forEach(([k, v]) => {
             if (this.inputs[k]) {
                 this.inputs[k].load(v);
@@ -169,6 +180,8 @@ export abstract class AbstractNode implements IBaklavaEventEmitter, IBaklavaTapa
             id: this.id,
             title: this.title,
             comment: this.comment,
+            width: (this as any).width,
+            height: (this as any).height,
             inputs: inputStates,
             outputs: outputStates,
         };
