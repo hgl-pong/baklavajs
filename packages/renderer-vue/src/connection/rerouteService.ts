@@ -1,5 +1,13 @@
 import { reactive, ref } from "vue";
-import type { IReroutePoint } from "./ReroutePoint.vue";
+
+// 定义 IReroutePoint 接口以避免循环导入
+export interface IReroutePoint {
+  id: string;
+  x: number;
+  y: number;
+  connectionId: string;
+  segmentIndex: number;
+}
 import { v4 as uuidv4 } from "uuid";
 import type { Graph } from "@baklavajs/core";
 
@@ -50,7 +58,7 @@ export function createRerouteService(graph?: Graph): IRerouteService {
     
     // 按 segmentIndex 排序插入
     const insertIndex = reroutePoints.findIndex(
-      (point) => point.connectionId === connectionId && point.segmentIndex > segmentIndex
+      (point: IReroutePoint) => point.connectionId === connectionId && point.segmentIndex > segmentIndex
     );
     
     if (insertIndex === -1) {
@@ -61,8 +69,8 @@ export function createRerouteService(graph?: Graph): IRerouteService {
     
     // 更新后续点的 segmentIndex
     reroutePoints
-      .filter((point) => point.connectionId === connectionId && point.segmentIndex >= segmentIndex && point.id !== newPoint.id)
-      .forEach((point) => {
+      .filter((point: IReroutePoint) => point.connectionId === connectionId && point.segmentIndex >= segmentIndex && point.id !== newPoint.id)
+      .forEach((point: IReroutePoint) => {
         point.segmentIndex += 1;
       });
     
@@ -70,7 +78,7 @@ export function createRerouteService(graph?: Graph): IRerouteService {
   };
   
   const removeReroutePoint = (id: string) => {
-    const pointIndex = reroutePoints.findIndex((point) => point.id === id);
+    const pointIndex = reroutePoints.findIndex((point: IReroutePoint) => point.id === id);
     if (pointIndex === -1) return;
     
     const removedPoint = reroutePoints[pointIndex];
@@ -88,14 +96,14 @@ export function createRerouteService(graph?: Graph): IRerouteService {
     
     // 更新后续点的 segmentIndex
     reroutePoints
-      .filter((point) => point.connectionId === removedPoint.connectionId && point.segmentIndex > removedPoint.segmentIndex)
-      .forEach((point) => {
+      .filter((point: IReroutePoint) => point.connectionId === removedPoint.connectionId && point.segmentIndex > removedPoint.segmentIndex)
+      .forEach((point: IReroutePoint) => {
         point.segmentIndex -= 1;
       });
   };
   
   const updateReroutePointPosition = (id: string, x: number, y: number) => {
-    const point = reroutePoints.find((point) => point.id === id);
+    const point = reroutePoints.find((point: IReroutePoint) => point.id === id);
     if (point) {
       point.x = x;
       point.y = y;
@@ -132,8 +140,8 @@ export function createRerouteService(graph?: Graph): IRerouteService {
     
     // Fallback to reactive array for backward compatibility
     return reroutePoints
-      .filter((point) => point.connectionId === connectionId)
-      .sort((a, b) => a.segmentIndex - b.segmentIndex);
+      .filter((point: IReroutePoint) => point.connectionId === connectionId)
+      .sort((a: IReroutePoint, b: IReroutePoint) => a.segmentIndex - b.segmentIndex);
   };
   
   const clearReroutePointsForConnection = (connectionId: string) => {
@@ -189,19 +197,50 @@ export function createRerouteService(graph?: Graph): IRerouteService {
 
 // 全局重路由点选择状态管理
 export function createRerouteSelection() {
-  const selectedRerouteId = ref<string | null>(null);
+  const selectedRerouteIds = ref<string[]>([]);
   
   const selectReroute = (id: string) => {
-    selectedRerouteId.value = id;
+    if (!selectedRerouteIds.value.includes(id)) {
+      selectedRerouteIds.value.push(id);
+    }
   };
   
-  const unselectReroute = () => {
-    selectedRerouteId.value = null;
+  const unselectReroute = (id: string) => {
+    const index = selectedRerouteIds.value.indexOf(id);
+    if (index > -1) {
+      selectedRerouteIds.value.splice(index, 1);
+    }
+  };
+  
+  const toggleRerouteSelection = (id: string, isCtrlPressed: boolean = false) => {
+    if (isCtrlPressed) {
+      // Ctrl 键按下时，切换选择状态
+      const index = selectedRerouteIds.value.indexOf(id);
+      if (index > -1) {
+        selectedRerouteIds.value.splice(index, 1);
+      } else {
+        selectedRerouteIds.value.push(id);
+      }
+    } else {
+      // 否则只选择当前点
+      selectedRerouteIds.value = [id];
+    }
+  };
+  
+  const clearRerouteSelection = () => {
+    selectedRerouteIds.value = [];
+  };
+  
+  const isRerouteSelected = (id: string) => {
+    return selectedRerouteIds.value.includes(id);
   };
   
   return {
-    selectedRerouteId,
+    selectedRerouteIds,
     selectReroute,
     unselectReroute,
+    toggleRerouteSelection,
+    clearRerouteSelection,
+    isRerouteSelected,
   };
 }

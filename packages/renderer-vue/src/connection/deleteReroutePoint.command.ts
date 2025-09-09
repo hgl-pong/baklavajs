@@ -7,16 +7,19 @@ export type DeleteReroutePointCommand = ICommand<void>;
 
 export function registerDeleteReroutePointCommand(
     rerouteService: IRerouteService,
-    rerouteSelection: { selectedRerouteId: Ref<string | null>; unselectReroute: () => void },
+    rerouteSelection: { selectedRerouteIds: Ref<string[]>; clearRerouteSelection: () => void },
     handler: ICommandHandler
 ) {
     handler.registerCommand(DELETE_REROUTE_POINT_COMMAND, {
-        canExecute: () => rerouteSelection.selectedRerouteId.value !== null,
+        canExecute: () => rerouteSelection.selectedRerouteIds.value.length > 0,
         execute() {
-            const selectedId = rerouteSelection.selectedRerouteId.value;
-            if (selectedId) {
-                rerouteService.removeReroutePoint(selectedId);
-                rerouteSelection.unselectReroute();
+            const selectedIds = rerouteSelection.selectedRerouteIds.value;
+            if (selectedIds.length > 0) {
+                // 删除所有选中的 reroute point
+                selectedIds.forEach(id => {
+                    rerouteService.removeReroutePoint(id);
+                });
+                rerouteSelection.clearRerouteSelection();
             }
         },
     });

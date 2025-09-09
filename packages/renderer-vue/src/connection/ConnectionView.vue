@@ -30,7 +30,8 @@
 import { computed, defineComponent, inject, ref } from "vue";
 import { TemporaryConnectionState } from "./connection";
 import { useGraph, useViewModel } from "../utility";
-import ReroutePoint, { type IReroutePoint } from "./ReroutePoint.vue";
+import ReroutePoint from "./ReroutePoint.vue";
+import type { IReroutePoint } from "./rerouteService";
 import type { IRerouteService } from "./rerouteService";
 
 export default defineComponent({

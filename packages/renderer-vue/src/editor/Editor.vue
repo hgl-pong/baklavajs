@@ -151,6 +151,7 @@ import { computed, provide, Ref, ref, toRef, onMounted, watch } from "vue";
 import { AbstractNode } from "@baklavajs/core";
 import { IBaklavaViewModel } from "../viewModel";
 import { providePlugin, useDragMove } from "../utility";
+import { useRerouteDragMove } from "../utility/useRerouteDragMove";
 import { usePanZoom } from "./panZoom";
 import { provideTemporaryConnection } from "./temporaryConnection";
 import { useContextMenu } from "./contextMenu";
@@ -200,7 +201,14 @@ provide("rerouteService", rerouteService);
 
 // 提供重路由选择状态管理
 const rerouteSelection = createRerouteSelection();
-provide("rerouteSelection", rerouteSelection);
+provide("rerouteSelection", {
+  selectedRerouteIds: rerouteSelection.selectedRerouteIds,
+  selectReroute: rerouteSelection.selectReroute,
+  unselectReroute: rerouteSelection.unselectReroute,
+  toggleRerouteSelection: rerouteSelection.toggleRerouteSelection,
+  clearRerouteSelection: rerouteSelection.clearRerouteSelection,
+  isRerouteSelected: rerouteSelection.isRerouteSelected,
+});
 
 // 注册删除重路由点命令
 registerDeleteReroutePointCommand(rerouteService, rerouteSelection, props.viewModel.commandHandler);
@@ -253,7 +261,11 @@ const onPointerDown = (ev: PointerEvent) => {
         }
 
         if (ev.target === el.value) {
-            unselectAllNodes();
+            // 检查是否按下了 Ctrl 键
+            const isCtrlPressed = ev.ctrlKey || ev.metaKey;
+            if (!isCtrlPressed) {
+                unselectAllNodes();
+            }
             panZoom.onPointerDown(ev);
         }
         temporaryConnection.onMouseDown();
@@ -285,9 +297,15 @@ const selectNode = (node: AbstractNode) => {
 
 const unselectAllNodes = () => {
     props.viewModel.displayedGraph.selectedNodes = [];
+    // 同时清除 reroute point 选择
+    rerouteSelection?.clearRerouteSelection();
 };
 
+// 创建 reroute point 批量拖拽实例
+const rerouteDragMove = useRerouteDragMove(rerouteService, rerouteSelection.selectedRerouteIds);
+
 const startDrag = (ev: PointerEvent) => {
+    // 处理节点拖拽
     for (const selectedNode of props.viewModel.displayedGraph.selectedNodes) {
         const idx = nodes.value.indexOf(selectedNode);
         const dragMove = dragMoves.value[idx];
@@ -296,16 +314,29 @@ const startDrag = (ev: PointerEvent) => {
         document.addEventListener("pointermove", dragMove.onPointerMove);
     }
 
+    // 处理 reroute point 拖拽
+    if (rerouteSelection.selectedRerouteIds.value.length > 0) {
+        rerouteDragMove.onPointerDown(ev);
+        document.addEventListener("pointermove", rerouteDragMove.onPointerMove);
+    }
+
     document.addEventListener("pointerup", stopDrag);
 };
 
 const stopDrag = () => {
+    // 停止节点拖拽
     for (const selectedNode of props.viewModel.displayedGraph.selectedNodes) {
         const idx = nodes.value.indexOf(selectedNode);
         const dragMove = dragMoves.value[idx];
         dragMove.onPointerUp();
 
         document.removeEventListener("pointermove", dragMove.onPointerMove);
+    }
+
+    // 停止 reroute point 拖拽
+    if (rerouteSelection.selectedRerouteIds.value.length > 0) {
+        rerouteDragMove.onPointerUp();
+        document.removeEventListener("pointermove", rerouteDragMove.onPointerMove);
     }
 
     document.removeEventListener("pointerup", stopDrag);

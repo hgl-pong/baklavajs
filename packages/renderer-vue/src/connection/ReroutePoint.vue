@@ -23,14 +23,7 @@
 <script lang="ts">
 import { computed, defineComponent, ref, inject, watch, onUnmounted } from "vue";
 import { useDragMove, useGraph } from "../utility";
-
-export interface IReroutePoint {
-  id: string;
-  x: number;
-  y: number;
-  connectionId: string;
-  segmentIndex: number; // 在连接线的哪个段上
-}
+import type { IReroutePoint } from "./rerouteService";
 
 export default defineComponent({
   props: {
@@ -49,13 +42,16 @@ export default defineComponent({
     
     // 注入选择状态管理
     const rerouteSelection = inject<{
-      selectedRerouteId: any;
+      selectedRerouteIds: any;
       selectReroute: (id: string) => void;
-      unselectReroute: () => void;
+      unselectReroute: (id: string) => void;
+      toggleRerouteSelection: (id: string, isCtrlPressed: boolean) => void;
+      clearRerouteSelection: () => void;
+      isRerouteSelected: (id: string) => boolean;
     }>("rerouteSelection");
     
     const isSelected = computed(() => 
-      rerouteSelection?.selectedRerouteId?.value === props.reroutePoint.id
+      rerouteSelection?.isRerouteSelected?.(props.reroutePoint.id) || false
     );
     
     // 原始坐标（编辑器空间）
@@ -92,9 +88,15 @@ export default defineComponent({
       ev.stopPropagation();
       ev.preventDefault();
 
-      // 切换选择状态：如果已选中则取消选择，否则选中
+      // 检查是否按下了 Ctrl 键
+      const isCtrlPressed = ev.ctrlKey || ev.metaKey;
+      
+      // 使用新的多选系统
+      rerouteSelection?.toggleRerouteSelection(props.reroutePoint.id, isCtrlPressed);
+      
+      // 发出选择事件供父组件处理
       if (isSelected.value) {
-        emit("unselect");
+        emit("unselect", props.reroutePoint.id);
       } else {
         emit("select", props.reroutePoint.id);
       }
@@ -105,7 +107,13 @@ export default defineComponent({
       // 触发拖拽开始（记录起点和初始位置）
       dragMove.onPointerDown(ev);
 
-      const handlePointerMove = (e: PointerEvent) => dragMove.onPointerMove(e);
+      const handlePointerMove = (e: PointerEvent) => {
+        // 如果当前 reroute point 被选中，则处理拖拽
+        if (isSelected.value) {
+          dragMove.onPointerMove(e);
+        }
+      };
+      
       const handlePointerUp = (e: PointerEvent) => {
         // 结束拖拽
         isDragging.value = false;
