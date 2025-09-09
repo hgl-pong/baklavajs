@@ -380,29 +380,38 @@ baklava.settings.customComponents.set("CustomInterface", CustomInterface);
 
 ---
 
-## Global Clipboard
+## System Clipboard
 
-Cross-tab clipboard functionality for copying and pasting nodes between browser tabs.
+Built-in system clipboard functionality for copying and pasting nodes using native browser APIs.
 
 ```typescript
-import { globalClipboard } from '@baklavajs/renderer-vue';
+import { useBaklava } from '@baklavajs/renderer-vue';
 
-// Copy nodes to clipboard
-globalClipboard.copy([node1, node2]);
+// Get view model and clipboard instance
+const baklava = useBaklava();
 
-// Paste nodes from clipboard
-const pastedNodes = await globalClipboard.paste(baklava.editor);
+// Copy selected nodes (Ctrl+C or through commands)
+baklava.commandHandler.executeCommand("COPY");
 
-// Check if clipboard has data
-const hasData = globalClipboard.hasData();
+// Paste from clipboard (Ctrl+V or through commands)
+await baklava.commandHandler.executeCommand("PASTE");
+
+// Check clipboard state (best effort)
+console.log(baklava.clipboard.isEmpty);
 ```
 
-### useGlobalClipboard()
+### Clipboard API
 
-Composable for clipboard functionality.
+Access the clipboard instance from the Baklava view model.
 
 ```typescript
-const { copy, paste, hasData } = useGlobalClipboard();
+import { useBaklava } from '@baklavajs/renderer-vue';
+
+const baklava = useBaklava();
+const clipboard = baklava.clipboard;
+
+// Access clipboard state
+console.log(clipboard.isEmpty); // boolean
 ```
 
 ---

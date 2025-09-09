@@ -12,7 +12,6 @@ export * from "./toolbar";
 export * from "./viewModel";
 export * from "./utility";
 export { displayInSidebar } from "./sidebar";
-export { globalClipboard, useGlobalClipboard, type IGlobalClipboard, type IGlobalClipboardData } from "./globalClipboard";
 
 export * as Components from "./components";
 export * as Commands from "./commandList";

@@ -490,59 +490,56 @@ type(scope): description
 - 更新相关文档
 - 通过所有 CI 检查
 
-## 跨标签页拷贝粘贴功能
+## 系统剪贴板复制粘贴
 
 ### 功能概述
 
-BaklavaJS 支持在多个浏览器标签页之间进行节点的拷贝粘贴操作。该功能通过全局剪贴板管理器实现，使用 `localStorage` 在不同标签页间共享剪贴板数据。
+BaklavaJS 使用浏览器的系统剪贴板在当前页面内完成复制/粘贴操作。复制会将所选节点及其相关连线序列化为 JSON 并写入系统剪贴板；粘贴会从剪贴板读取并还原到当前图中。
 
 ### 实现原理
 
-- **全局剪贴板管理器**: `globalClipboard.ts` 提供跨标签页的数据共享
-- **localStorage 同步**: 使用浏览器的 `localStorage` API 存储剪贴板数据
-- **事件监听**: 监听 `storage` 事件实现标签页间的实时同步
-- **数据序列化**: 节点和连接数据通过 JSON 序列化存储
+- 使用 `navigator.clipboard` 写入/读取文本（需安全上下文 https 或 localhost）
+- JSON 载荷包含 nodes 与 connections，并保留连线的 reroute points
+- 通过 AJV 对载荷进行结构校验，提升兼容性与鲁棒性
+- 采用命令系统注册 COPY/PASTE 命令，支持快捷键 Ctrl/Cmd+C、Ctrl/Cmd+V
 
 ### 使用方法
 
-1. **复制节点**: 选中节点后按 `Ctrl+C` 或使用右键菜单
-2. **粘贴节点**: 在任意标签页中按 `Ctrl+V` 粘贴已复制的节点
-3. **跨标签页操作**: 在标签页 A 复制的节点可以在标签页 B 中粘贴
+- 选中一个或多个节点后，按 Ctrl/Cmd+C 复制；在画布中按 Ctrl/Cmd+V 粘贴
+- 也可以通过命令系统编程触发：
 
-### 技术实现
+```ts
+import { useBaklava, Commands } from '@baklavajs/renderer-vue';
 
-#### 全局剪贴板管理器
+const baklava = useBaklava();
 
-```typescript
-// 使用全局剪贴板
-import { globalClipboard } from '@baklavajs/renderer-vue';
-
-// 设置剪贴板数据
-globalClipboard.setData(nodeBuffer, connectionBuffer);
-
-// 获取剪贴板数据
-const data = globalClipboard.getData();
-
-// 清空剪贴板
-globalClipboard.clear();
+baklava.commandHandler.executeCommand(Commands.COPY_COMMAND);
+baklava.commandHandler.executeCommand(Commands.PASTE_COMMAND);
 ```
 
-#### 数据结构
+- 访问剪贴板实例以检查状态：
 
-```typescript
-interface IGlobalClipboardData {
-  nodeBuffer: string;      // 序列化的节点数据
-  connectionBuffer: string; // 序列化的连接数据
-  timestamp: number;       // 时间戳
-  instanceId: string;      // 实例ID
+```ts
+const clipboard = baklava.clipboard;
+console.log(clipboard.isEmpty); // boolean
+```
+
+### 数据结构示例
+
+```json
+{
+  "type": "baklava.clipboard",
+  "version": 1,
+  "nodes": [ /* 节点快照（包含位置等） */ ],
+  "connections": [ /* 连线快照（包含 reroutePoints ） */ ]
 }
 ```
 
 ### 注意事项
 
-- 剪贴板数据存储在 `localStorage` 中，受浏览器存储限制
-- 跨域标签页无法共享剪贴板数据
-- 数据包含时间戳，可用于实现过期清理机制
+- 系统剪贴板 API 需要安全上下文与用户手势；在部分环境下读取可能失败
+- 当前实现不提供跨标签页同步；如需此能力，请自行实现外部同步方案
+- 不同浏览器或权限策略下行为可能有所差异
 
 ## 常见问题
 

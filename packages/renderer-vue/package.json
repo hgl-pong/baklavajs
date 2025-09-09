@@ -34,7 +34,8 @@
     },
     "dependencies": {
         "@baklavajs/core": "^2.7.0",
-        "@baklavajs/events": "^2.7.0"
+        "@baklavajs/events": "^2.7.0",
+        "ajv": "^8.17.1"
     },
     "devDependencies": {
         "@types/resize-observer-browser": "^0.1.11",

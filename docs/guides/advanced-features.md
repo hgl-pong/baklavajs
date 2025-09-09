@@ -8,7 +8,7 @@ This guide covers advanced features and techniques for extending BaklavaJS beyon
 - [Multi-Engine Architecture](#multi-engine-architecture)
 - [Advanced Plugin Development](#advanced-plugin-development)
 - [Custom Engine Creation](#custom-engine-creation)
-- [Cross-Tab Clipboard](#cross-tab-clipboard)
+- [System Clipboard](#system-clipboard)
 - [Performance Optimization](#performance-optimization)
 - [Advanced Type System](#advanced-type-system)
 - [Real-time Collaboration](#real-time-collaboration)
@@ -733,159 +733,38 @@ class ParallelEngine extends BaseEngine {
 }
 ```
 
-## Cross-Tab Clipboard
+## System Clipboard
 
-Enable clipboard sharing across browser tabs using localStorage.
+Use the native system clipboard to copy and paste nodes with consistent behavior across modern browsers.
+
+- Copy: Ctrl/Cmd+C or via command handler
+- Paste: Ctrl/Cmd+V or via command handler
 
 ```typescript
-class CrossTabClipboard {
-    private storageKey = 'baklavajs-clipboard';
-    private editor: Editor;
-    
-    constructor(editor: Editor) {
-        this.editor = editor;
-        this.setupEventListeners();
-    }
-    
-    private setupEventListeners() {
-        // Listen for storage events
-        window.addEventListener('storage', (event) => {
-            if (event.key === this.storageKey) {
-                this.handleClipboardUpdate(event.newValue);
-            }
-        });
-        
-        // Listen for copy events
-        this.editor.events.copy.subscribe(this, (event) => {
-            this.copyToClipboard(event.nodes);
-        });
-    }
-    
-    private copyToClipboard(nodes: AbstractNode[]) {
-        const clipboardData = {
-            nodes: nodes.map(node => this.serializeNode(node)),
-            connections: this.getConnectionsForNodes(nodes),
-            timestamp: Date.now(),
-            source: window.location.href
-        };
-        
-        localStorage.setItem(this.storageKey, JSON.stringify(clipboardData));
-        
-        // Trigger clipboard update event
-        this.events.clipboardUpdate.emit(clipboardData);
-    }
-    
-    private handleClipboardUpdate(newValue: string) {
-        try {
-            const clipboardData = JSON.parse(newValue);
-            
-            // Ignore updates from current tab
-            if (clipboardData.source === window.location.href) {
-                return;
-            }
-            
-            // Validate clipboard data
-            if (this.validateClipboardData(clipboardData)) {
-                this.events.clipboardDataReceived.emit(clipboardData);
-            }
-        } catch (error) {
-            console.error('Error parsing clipboard data:', error);
-        }
-    }
-    
-    private serializeNode(node: AbstractNode): any {
-        return {
-            id: node.id,
-            type: node.type,
-            title: node.title,
-            position: (node as any).position,
-            inputs: Object.fromEntries(
-                Object.entries(node.inputs).map(([key, intf]) => [
-                    key, 
-                    { value: intf.value, type: intf.type }
-                ])
-            ),
-            outputs: Object.fromEntries(
-                Object.entries(node.outputs).map(([key, intf]) => [
-                    key, 
-                    { value: intf.value, type: intf.type }
-                ])
-            )
-        };
-    }
-    
-    private getConnectionsForNodes(nodes: AbstractNode[]): any[] {
-        const nodeIds = new Set(nodes.map(n => n.id));
-        
-        return this.editor.graph.connections.filter(conn => {
-            return nodeIds.has(conn.from.nodeId) && nodeIds.has(conn.to.nodeId);
-        }).map(conn => ({
-            from: conn.from,
-            to: conn.to
-        }));
-    }
-    
-    private validateClipboardData(data: any): boolean {
-        return data.nodes && Array.isArray(data.nodes) && data.timestamp;
-    }
-    
-    pasteFromClipboard(): any | null {
-        const clipboardData = localStorage.getItem(this.storageKey);
-        
-        if (!clipboardData) {
-            return null;
-        }
-        
-        try {
-            const data = JSON.parse(clipboardData);
-            
-            // Create new nodes from clipboard data
-            const newNodes = data.nodes.map((nodeData: any) => {
-                const NodeClass = this.editor.getNodeType(nodeData.type);
-                if (!NodeClass) {
-                    throw new Error(`Unknown node type: ${nodeData.type}`);
-                }
-                
-                const node = new NodeClass();
-                node.title = nodeData.title;
-                (node as any).position = { ...nodeData.position };
-                
-                // Restore input values
-                Object.entries(nodeData.inputs).forEach(([key, input]) => {
-                    if (node.inputs[key]) {
-                        node.inputs[key].value = input.value;
-                    }
-                });
-                
-                return node;
-            });
-            
-            // Add nodes to graph
-            newNodes.forEach(node => {
-                this.editor.graph.addNode(node);
-            });
-            
-            // Restore connections
-            data.connections.forEach((connData: any) => {
-                const fromNode = newNodes.find(n => n.id === connData.from.nodeId);
-                const toNode = newNodes.find(n => n.id === connData.to.nodeId);
-                
-                if (fromNode && toNode) {
-                    this.editor.graph.connect(
-                        fromNode.outputs[connData.from.name],
-                        toNode.inputs[connData.to.name]
-                    );
-                }
-            });
-            
-            return { nodes: newNodes, connections: data.connections };
-            
-        } catch (error) {
-            console.error('Error pasting from clipboard:', error);
-            return null;
-        }
-    }
-}
+import { useBaklava } from '@baklavajs/renderer-vue';
+
+const baklava = useBaklava();
+
+// Copy selected nodes
+baklava.commandHandler.executeCommand('COPY');
+
+// Paste from clipboard
+await baklava.commandHandler.executeCommand('PASTE');
+
+// Inspect clipboard state
+console.log(baklava.clipboard.isEmpty);
+```
+
+Advanced: low-level clipboard access
+
+```typescript
+import { useClipboard } from '@baklavajs/renderer-vue';
+
+const clipboard = useClipboard(displayedGraph, editor, commandHandler);
+
+// clipboard.copy() and clipboard.paste() are internally wired
+// to command handler and native Clipboard API
+console.log(clipboard.isEmpty);
 ```
 
 ## Performance Optimization

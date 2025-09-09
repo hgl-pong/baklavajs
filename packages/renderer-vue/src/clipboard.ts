@@ -1,4 +1,5 @@
-import { computed, reactive, Ref, ref, onUnmounted } from "vue";
+import { reactive, Ref, ref } from "vue";
+import Ajv from "ajv";
 import { v4 as uuidv4 } from "uuid";
 import { AbstractNode, INodeState, IConnectionState, Connection, NodeInterface, Editor, Graph } from "@baklavajs/core";
 import {
@@ -8,19 +9,73 @@ import {
     START_TRANSACTION_COMMAND,
 } from "./history";
 import { ICommand, ICommandHandler } from "./commands";
-import { globalClipboard, IGlobalClipboardData } from "./globalClipboard";
 
 export const COPY_COMMAND = "COPY";
 export const PASTE_COMMAND = "PASTE";
-export const CLEAR_CLIPBOARD_COMMAND = "CLEAR_CLIPBOARD";
 
 export type CopyCommand = ICommand<void>;
 export type PasteCommand = ICommand<void>;
-export type ClearClipboardCommand = ICommand<void>;
 
 export interface IClipboard {
     isEmpty: boolean;
 }
+
+// Clipboard payload schema (permissive on node/connection shapes for compatibility)
+const ajv = new Ajv({ allErrors: true, strict: false });
+const clipboardSchema = {
+    type: "object",
+    required: ["type", "version", "nodes", "connections"],
+    additionalProperties: true,
+    properties: {
+        type: { const: "baklava.clipboard" },
+        version: { type: "integer", minimum: 1 },
+        nodes: {
+            type: "array",
+            items: {
+                type: "object",
+                required: ["id", "type"],
+                additionalProperties: true,
+                properties: {
+                    id: { type: "string" },
+                    type: { type: "string" },
+                    position: {
+                        type: "object",
+                        required: ["x", "y"],
+                        additionalProperties: true,
+                        properties: { x: { type: "number" }, y: { type: "number" } },
+                    },
+                },
+            },
+        },
+        connections: {
+            type: "array",
+            items: {
+                type: "object",
+                required: ["from", "to"],
+                additionalProperties: true,
+                properties: {
+                    id: { type: "string" },
+                    from: { type: "string" },
+                    to: { type: "string" },
+                    reroutePoints: {
+                        type: "array",
+                        items: {
+                            type: "object",
+                            required: ["x", "y"],
+                            additionalProperties: false,
+                            properties: {
+                                id: { type: "string" },
+                                x: { type: "number" },
+                                y: { type: "number" },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    },
+} as const;
+const validateClipboard = ajv.compile(clipboardSchema);
 
 export function useClipboard(
     displayedGraph: Ref<Graph>,
@@ -29,23 +84,8 @@ export function useClipboard(
 ): IClipboard {
     const token = Symbol("ClipboardToken");
 
-    // 使用全局剪贴板管理器
-    const isEmpty = computed(() => globalClipboard.isEmpty);
-    
-    // 订阅全局剪贴板变化
-    const unsubscribe = globalClipboard.subscribe(() => {
-        // 当全局剪贴板数据变化时，触发响应式更新
-        // isEmpty 会自动重新计算
-    });
-    
-    // 在组件卸载时取消订阅
-    onUnmounted(() => {
-        unsubscribe();
-    });
-
-    const clear = () => {
-        globalClipboard.clear();
-    };
+    // We cannot reliably know system clipboard state; track locally as best-effort
+    const isEmpty = ref(true);
 
     const copy = () => {
         // find all connections from and to the selected nodes
@@ -58,13 +98,44 @@ export function useClipboard(
             .filter(
                 (conn) => interfacesOfSelectedNodes.includes(conn.from) || interfacesOfSelectedNodes.includes(conn.to),
             )
-            .map((conn) => ({ from: conn.from.id, to: conn.to.id }) as IConnectionState);
+            .map((conn) => {
+                const base: Partial<IConnectionState> = { from: conn.from.id, to: conn.to.id };
+                const rps = (conn as any).getReroutePoints?.() ?? (conn as any).reroutePoints;
+                if (Array.isArray(rps) && rps.length > 0) {
+                    base.reroutePoints = rps.map((p: any) => ({ id: p.id, x: p.x, y: p.y }));
+                }
+                return base as IConnectionState;
+            });
 
-        const connectionBuffer = JSON.stringify(connections);
-        const nodeBuffer = JSON.stringify(displayedGraph.value.selectedNodes.map((n) => n.save()));
-        
-        // 使用全局剪贴板管理器保存数据
-        globalClipboard.setData(nodeBuffer, connectionBuffer);
+        const nodes = displayedGraph.value.selectedNodes.map((n) => n.save());
+
+        const payload = {
+            type: "baklava.clipboard",
+            version: 1,
+            nodes,
+            connections,
+        };
+
+        // validate but don't block copy if it fails; we still try to write
+        try {
+            validateClipboard(payload);
+        } catch {
+            // ignore
+        }
+
+        try {
+            // write to system clipboard as text
+            void navigator.clipboard
+                ?.writeText(JSON.stringify(payload))
+                .then(() => {
+                    isEmpty.value = false;
+                })
+                .catch(() => {
+                    // swallow; user may be in insecure context
+                });
+        } catch {
+            // ignore
+        }
     };
 
     const findInterface = (
@@ -87,26 +158,35 @@ export function useClipboard(
         return undefined;
     };
 
-    const paste = () => {
-        if (isEmpty.value) {
+    const paste = async () => {
+        let text = "";
+        try {
+            text = await navigator.clipboard?.readText();
+        } catch {
+            // Cannot read clipboard (permissions or context). Abort.
+            return;
+        }
+        if (!text) {
             return;
         }
 
-        // 从全局剪贴板获取数据
-        const clipboardData = globalClipboard.getData();
-        if (!clipboardData) {
-            return;
+        let data: any;
+        try {
+            data = JSON.parse(text);
+        } catch {
+            return; // not JSON we understand
         }
 
-        // Map old IDs to new IDs
+        if (!validateClipboard(data)) {
+            return; // invalid structure
+        }
+
+        const parsedNodeBuffer = data.nodes as INodeState<any, any>[];
+        const parsedConnectionBuffer = data.connections as IConnectionState[];
+
         const idmap = new Map<string, string>();
-
-        const parsedNodeBuffer = JSON.parse(clipboardData.nodeBuffer) as INodeState<any, any>[];
-        const parsedConnectionBuffer = JSON.parse(clipboardData.connectionBuffer) as IConnectionState[];
-
         const newNodes: AbstractNode[] = [];
         const newConnections: Connection[] = [];
-
         const graph = displayedGraph.value;
 
         commandHandler.executeCommand<StartTransactionCommand>(START_TRANSACTION_COMMAND);
@@ -115,6 +195,7 @@ export function useClipboard(
             const nodeType = editor.value.nodeTypes.get(oldNode.type);
             if (!nodeType) {
                 console.warn(`Node type ${oldNode.type} not registered`);
+                commandHandler.executeCommand<CommitTransactionCommand>(COMMIT_TRANSACTION_COMMAND);
                 return;
             }
             const copiedNode = new nodeType.type();
@@ -156,6 +237,12 @@ export function useClipboard(
             }
             const newConnection = graph.addConnection(fromIntf, toIntf);
             if (newConnection) {
+                // restore reroute points if any
+                if (Array.isArray((c as any).reroutePoints)) {
+                    for (const rp of (c as any).reroutePoints) {
+                        newConnection.addReroutePoint(rp.x, rp.y, rp.id);
+                    }
+                }
                 newConnections.push(newConnection);
             }
         }
@@ -164,6 +251,8 @@ export function useClipboard(
         displayedGraph.value.selectedNodes = newNodes;
 
         commandHandler.executeCommand<CommitTransactionCommand>(COMMIT_TRANSACTION_COMMAND);
+
+        isEmpty.value = false;
 
         return {
             newNodes,
@@ -177,14 +266,11 @@ export function useClipboard(
     });
     commandHandler.registerHotkey(["Control", "c"], COPY_COMMAND);
     commandHandler.registerCommand(PASTE_COMMAND, {
-        canExecute: () => !isEmpty.value,
+        // We cannot reliably know system clipboard state, allow execution and handle errors inside
+        canExecute: () => true,
         execute: paste,
     });
     commandHandler.registerHotkey(["Control", "v"], PASTE_COMMAND);
-    commandHandler.registerCommand(CLEAR_CLIPBOARD_COMMAND, {
-        canExecute: () => true,
-        execute: clear,
-    });
 
     return reactive({ isEmpty });
 }
