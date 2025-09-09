@@ -12,7 +12,8 @@
       "Bash(echo:*)",
       "Bash(node:*)",
       "Bash(yarn playground:*)",
-      "Bash(yarn dev:*)"
+      "Bash(yarn dev:*)",
+      "Bash(yarn lint:*)"
     ],
     "deny": [],
     "ask": []

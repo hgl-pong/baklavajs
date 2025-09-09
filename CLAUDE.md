@@ -14,7 +14,7 @@ BaklavaJS is a visual node editor for the web built with TypeScript and Vue 3. I
 - **Vue 3 Integration**: Modern reactive UI components with Composition API
 - **Cross-Platform**: Web-based with Electron desktop app support
 - **Theme System**: Customizable appearance with CSS variables
-- **Real-time Collaboration**: Cross-tab clipboard and synchronization features
+- **Real-time Collaboration**: System clipboard copy/paste via commands (COPY/PASTE); external sync can be integrated if needed
 
 ## Development Commands
 
@@ -138,7 +138,7 @@ This project uses Lerna + Nx to manage a monorepo with the following packages:
 - Vue 3 Composition API throughout (`packages/renderer-vue/src/`)
 - Component-based architecture for nodes and interfaces
 - Built-in commands (undo/redo, copy/paste, zoom, etc.)
-- Cross-tab clipboard functionality using localStorage
+- System clipboard copy/paste via commands (COPY/PASTE)
 - Subgraph support with nested editing
 - Context menu system with extensible items
 
@@ -557,8 +557,19 @@ export async function executeTestGraph(nodeSetup: (graph: Graph) => Promise<void
 
 ## Special Features
 
-### Cross-Tab Clipboard
-Nodes can be copied in one browser tab and pasted in another using localStorage synchronization. The implementation is in `packages/renderer-vue/src/globalClipboard.ts`.
+### System Clipboard
+Nodes can be copied and pasted using the browser's system clipboard. Use the built-in COPY/PASTE commands via the command handler:
+
+```ts
+import { useBaklava, Commands } from '@baklavajs/renderer-vue';
+
+const baklava = useBaklava();
+
+baklava.commandHandler.executeCommand(Commands.COPY_COMMAND);
+baklava.commandHandler.executeCommand(Commands.PASTE_COMMAND);
+```
+
+Note: Cross-tab synchronization is not provided by default. If needed, implement an external syncing mechanism tailored to your app.
 
 ### Subgraph Support
 Complex node networks can be encapsulated as subgraphs with dedicated input/output nodes. Implementation in `packages/renderer-vue/src/graph/subgraph*`.

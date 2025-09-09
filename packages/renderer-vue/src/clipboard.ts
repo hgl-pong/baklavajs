@@ -240,7 +240,9 @@ export function useClipboard(
                 // restore reroute points if any
                 if (Array.isArray((c as any).reroutePoints)) {
                     for (const rp of (c as any).reroutePoints) {
-                        newConnection.addReroutePoint(rp.x, rp.y, rp.id);
+                        // Generate new ID for the reroute point to avoid conflicts
+                        // and offset position by 100px like nodes
+                        newConnection.addReroutePoint(rp.x + 100, rp.y + 100);
                     }
                 }
                 newConnections.push(newConnection);
