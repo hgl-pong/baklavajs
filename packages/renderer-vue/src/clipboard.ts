@@ -18,6 +18,14 @@ export type PasteCommand = ICommand<void>;
 
 export interface IClipboard {
     isEmpty: boolean;
+    setRerouteSelection: (rerouteSelection: {
+        selectedRerouteIds: Ref<string[]>;
+        clearRerouteSelection: () => void;
+        selectReroute: (id: string) => void;
+    }) => void;
+    setRerouteService: (rerouteService: {
+        addReroutePoint: (connectionId: string, x: number, y: number, segmentIndex: number) => any;
+    }) => void;
 }
 
 // Clipboard payload schema (permissive on node/connection shapes for compatibility)
@@ -86,6 +94,18 @@ export function useClipboard(
 
     // We cannot reliably know system clipboard state; track locally as best-effort
     const isEmpty = ref(true);
+    
+    // Store reroute selection for later use
+    let rerouteSelection: {
+        selectedRerouteIds: Ref<string[]>;
+        clearRerouteSelection: () => void;
+        selectReroute: (id: string) => void;
+    } | undefined;
+    
+    // Store reroute service for later use
+    let rerouteService: {
+        addReroutePoint: (connectionId: string, x: number, y: number, segmentIndex: number) => any;
+    } | undefined;
 
     const copy = () => {
         // find all connections from and to the selected nodes
@@ -100,7 +120,7 @@ export function useClipboard(
             )
             .map((conn) => {
                 const base: Partial<IConnectionState> = { from: conn.from.id, to: conn.to.id };
-                const rps = (conn as any).getReroutePoints?.() ?? (conn as any).reroutePoints;
+                const rps = 'getReroutePoints' in conn ? (conn as any).getReroutePoints() : (conn as any).reroutePoints;
                 if (Array.isArray(rps) && rps.length > 0) {
                     base.reroutePoints = rps.map((p: any) => ({ id: p.id, x: p.x, y: p.y }));
                 }
@@ -158,7 +178,11 @@ export function useClipboard(
         return undefined;
     };
 
-    const paste = async () => {
+    const paste = async (): Promise<{
+        newNodes: AbstractNode[];
+        newConnections: Connection[];
+        newReroutePointIds: string[];
+    } | undefined> => {
         let text = "";
         try {
             text = await navigator.clipboard?.readText();
@@ -187,6 +211,7 @@ export function useClipboard(
         const idmap = new Map<string, string>();
         const newNodes: AbstractNode[] = [];
         const newConnections: Connection[] = [];
+        const newReroutePointIds: string[] = [];
         const graph = displayedGraph.value;
 
         commandHandler.executeCommand<StartTransactionCommand>(START_TRANSACTION_COMMAND);
@@ -240,9 +265,16 @@ export function useClipboard(
                 // restore reroute points if any
                 if (Array.isArray((c as any).reroutePoints)) {
                     for (const rp of (c as any).reroutePoints) {
-                        // Generate new ID for the reroute point to avoid conflicts
-                        // and offset position by 100px like nodes
-                        newConnection.addReroutePoint(rp.x + 100, rp.y + 100);
+                        // Use reroute service if available to ensure the reroute point is added
+                        // to both the core model and the reactive array
+                        if (rerouteService) {
+                            const newReroutePoint = rerouteService.addReroutePoint(newConnection.id, rp.x + 100, rp.y + 100, 0);
+                            newReroutePointIds.push(newReroutePoint.id);
+                        } else {
+                            // Fallback to core connection method
+                            const newReroutePoint = newConnection.addReroutePoint(rp.x + 100, rp.y + 100);
+                            newReroutePointIds.push(newReroutePoint.id);
+                        }
                     }
                 }
                 newConnections.push(newConnection);
@@ -252,6 +284,15 @@ export function useClipboard(
         // select all new nodes
         displayedGraph.value.selectedNodes = newNodes;
 
+        // select all new reroute points if reroute selection is available
+        if (rerouteSelection && newReroutePointIds.length > 0) {
+            rerouteSelection.clearRerouteSelection();
+            const selection = rerouteSelection; // Local variable to avoid undefined check
+            newReroutePointIds.forEach(id => {
+                selection.selectReroute(id);
+            });
+        }
+
         commandHandler.executeCommand<CommitTransactionCommand>(COMMIT_TRANSACTION_COMMAND);
 
         isEmpty.value = false;
@@ -259,6 +300,7 @@ export function useClipboard(
         return {
             newNodes,
             newConnections,
+            newReroutePointIds,
         };
     };
 
@@ -274,5 +316,19 @@ export function useClipboard(
     });
     commandHandler.registerHotkey(["Control", "v"], PASTE_COMMAND);
 
-    return reactive({ isEmpty });
+    const setRerouteSelection = (newRerouteSelection: {
+        selectedRerouteIds: Ref<string[]>;
+        clearRerouteSelection: () => void;
+        selectReroute: (id: string) => void;
+    }) => {
+        rerouteSelection = newRerouteSelection;
+    };
+
+    const setRerouteService = (newRerouteService: {
+        addReroutePoint: (connectionId: string, x: number, y: number, segmentIndex: number) => any;
+    }) => {
+        rerouteService = newRerouteService;
+    };
+
+    return reactive({ isEmpty, setRerouteSelection, setRerouteService });
 }

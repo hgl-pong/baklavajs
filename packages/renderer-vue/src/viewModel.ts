@@ -32,6 +32,16 @@ export interface IBaklavaViewModel extends IBaklavaTapable {
     switchGraph: (newGraph: Graph | GraphTemplate) => void;
     // Add search state to view model
     search: ReturnType<typeof registerCanvasSearch>;
+    // Set reroute selection for clipboard operations
+    setRerouteSelection: (rerouteSelection: {
+        selectedRerouteIds: Ref<string[]>;
+        clearRerouteSelection: () => void;
+        selectReroute: (id: string) => void;
+    }) => void;
+    // Set reroute service for clipboard operations
+    setRerouteService: (rerouteService: {
+        addReroutePoint: (connectionId: string, x: number, y: number, segmentIndex: number) => any;
+    }) => void;
 }
 
 export function useBaklava(existingEditor?: Editor): IBaklavaViewModel {
@@ -123,6 +133,20 @@ export function useBaklava(existingEditor?: Editor): IBaklavaViewModel {
         { immediate: true },
     );
 
+    const setRerouteSelection = (newRerouteSelection: {
+        selectedRerouteIds: Ref<string[]>;
+        clearRerouteSelection: () => void;
+        selectReroute: (id: string) => void;
+    }) => {
+        clipboard.setRerouteSelection(newRerouteSelection);
+    };
+
+    const setRerouteService = (newRerouteService: {
+        addReroutePoint: (connectionId: string, x: number, y: number, segmentIndex: number) => any;
+    }) => {
+        clipboard.setRerouteService(newRerouteService);
+    };
+
     return reactive({
         editor,
         displayedGraph,
@@ -134,5 +158,7 @@ export function useBaklava(existingEditor?: Editor): IBaklavaViewModel {
         hooks,
         switchGraph,
         search,
+        setRerouteSelection,
+        setRerouteService,
     }) as IBaklavaViewModel;
 }

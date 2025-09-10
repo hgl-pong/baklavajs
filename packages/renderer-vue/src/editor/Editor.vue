@@ -213,6 +213,18 @@ provide("rerouteSelection", {
 // 注册删除重路由点命令
 registerDeleteReroutePointCommand(rerouteService, rerouteSelection, props.viewModel.commandHandler);
 
+// 设置重路由选择到剪贴板
+props.viewModel.setRerouteSelection({
+  selectedRerouteIds: rerouteSelection.selectedRerouteIds,
+  clearRerouteSelection: rerouteSelection.clearRerouteSelection,
+  selectReroute: rerouteSelection.selectReroute,
+});
+
+// 设置重路由服务到剪贴板
+props.viewModel.setRerouteService({
+  addReroutePoint: rerouteService.addReroutePoint,
+});
+
 // 监听图变化，同步重路由服务
 watch(() => props.viewModel.displayedGraph, () => {
   rerouteService.syncWithCoreModel();
@@ -293,12 +305,62 @@ const selectNode = (node: AbstractNode) => {
         unselectAllNodes();
     }
     props.viewModel.displayedGraph.selectedNodes.push(node);
+    
+    // 自动选择重路由点
+    autoSelectReroutePoints();
 };
 
 const unselectAllNodes = () => {
     props.viewModel.displayedGraph.selectedNodes = [];
     // 同时清除 reroute point 选择
     rerouteSelection?.clearRerouteSelection();
+};
+
+// 自动选择重路由点：当连接线两端的节点都被选中时，选中该连接线上的所有重路由点
+const autoSelectReroutePoints = () => {
+    if (!rerouteSelection || !rerouteService) return;
+    
+    const selectedNodes = props.viewModel.displayedGraph.selectedNodes;
+    if (selectedNodes.length < 2) return;
+    
+    // 获取所有选中节点之间的连接线
+    const connectionsBetweenSelectedNodes = getConnectionsBetweenSelectedNodes(selectedNodes);
+    
+    // 对每条连接线，选中其上的所有重路由点
+    for (const connection of connectionsBetweenSelectedNodes) {
+        selectReroutePointsForConnection(connection.id);
+    }
+};
+
+// 获取选中节点之间的所有连接线
+const getConnectionsBetweenSelectedNodes = (selectedNodes: AbstractNode[]) => {
+    const selectedNodeIds = new Set(selectedNodes.map(n => n.id));
+    const connectionsBetweenSelected: Array<typeof connections.value[0]> = [];
+    
+    for (const connection of connections.value) {
+        const fromNodeId = connection.from.nodeId;
+        const toNodeId = connection.to.nodeId;
+        
+        // 检查连接线的两端是否都在选中的节点中
+        if (selectedNodeIds.has(fromNodeId) && selectedNodeIds.has(toNodeId)) {
+            connectionsBetweenSelected.push(connection);
+        }
+    }
+    
+    return connectionsBetweenSelected;
+};
+
+// 选择指定连接线上的所有重路由点
+const selectReroutePointsForConnection = (connectionId: string) => {
+    if (!rerouteSelection || !rerouteService) return;
+    
+    const reroutePoints = rerouteService.getReroutePointsForConnection(connectionId);
+    
+    for (const reroutePoint of reroutePoints) {
+        if (!rerouteSelection.isRerouteSelected(reroutePoint.id)) {
+            rerouteSelection.selectReroute(reroutePoint.id);
+        }
+    }
 };
 
 // 创建 reroute point 批量拖拽实例
